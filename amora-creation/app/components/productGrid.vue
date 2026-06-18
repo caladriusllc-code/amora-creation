@@ -1,30 +1,41 @@
 <template>
   <section class="product-section">
     <div class="section-header">
-      <h2 class="section-title">Featured products</h2>
-      <div class="slider-controls">
-        <button class="control-btn">&larr;</button>
-        <button class="control-btn">&rarr;</button>
+      <h2 class="section-title">Nos derniers produits</h2>
+      <div class="slider-controls" v-show="showScrollbar">
+        <button class="control-btn" @click="scrollPrev" aria-label="Previous products">&larr;</button>
+        <button class="control-btn" @click="scrollNext" aria-label="Next products">&rarr;</button>
       </div>
     </div>
     
-    <div class="grid">
-      <div v-for="product in products" :key="product.id" class="product-card">
-        <div class="image-wrapper">
-          <span v-if="product.sale" class="sale-badge">Sale</span>
-          <img :src="product.image" :alt="product.name" class="product-image" />
-        </div>
-        <div class="product-info">
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-price">{{ formatPrice(product.price) }}</p>
-        </div>
+    <div class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
+      <ProductCards
+        v-for="product in products"
+        :key="product.id"
+        :image="product.image"
+        :name="product.name"
+        :price="product.price"
+        :sale="product.sale"
+      />
+    </div>
+
+    <!-- Custom Scrollbar -->
+    <div v-show="showScrollbar" class="custom-scrollbar-container">
+      <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
+        <div 
+          class="scrollbar-thumb" 
+          :style="{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }"
+          @mousedown.prevent="startDrag"
+          @touchstart="startDrag"
+        ></div>
       </div>
     </div>
   </section>
 </template>
 
 <script lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import ProductCards from './cards/productCards.vue';
 
 // Typage strict des données pour l'API
 interface Product {
@@ -36,6 +47,9 @@ interface Product {
 }
 
 export default {
+  components:{
+    ProductCards
+  },
   setup() {
     const products = ref<Product[]>([
       { 
@@ -76,9 +90,159 @@ export default {
       }).format(amount);
     };
 
+    // Refs for scroll elements
+    const cardsContainer = ref<HTMLElement | null>(null);
+    const trackRef = ref<HTMLElement | null>(null);
+    
+    // Scrollbar state
+    const thumbWidth = ref(0);
+    const thumbLeft = ref(0);
+    const showScrollbar = ref(false);
+
+    // Update scrollbar dimensions and positioning
+    const updateScrollbar = () => {
+      const container = cardsContainer.value;
+      if (!container) return;
+
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      
+      if (scrollWidth <= clientWidth) {
+        showScrollbar.value = false;
+        return;
+      }
+      
+      showScrollbar.value = true;
+      
+      const visibleRatio = clientWidth / scrollWidth;
+      const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100)); // Clamp between 10% and 100%
+      thumbWidth.value = calculatedWidth;
+      
+      const maxScrollLeft = scrollWidth - clientWidth;
+      const progress = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
+      thumbLeft.value = progress * (100 - calculatedWidth);
+    };
+
+    // Navigation buttons handlers
+    const scrollPrev = () => {
+      const container = cardsContainer.value;
+      if (!container) return;
+      const scrollAmount = container.clientWidth * 0.75;
+      container.scrollBy({
+        left: -scrollAmount,
+        behavior: 'smooth'
+      });
+    };
+
+    const scrollNext = () => {
+      const container = cardsContainer.value;
+      if (!container) return;
+      const scrollAmount = container.clientWidth * 0.75;
+      container.scrollBy({
+        left: scrollAmount,
+        behavior: 'smooth'
+      });
+    };
+
+    // Track click handler
+    const handleTrackClick = (e: MouseEvent) => {
+      const track = trackRef.value;
+      const container = cardsContainer.value;
+      if (!track || !container) return;
+      
+      const rect = track.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickRatio = clickX / rect.width;
+      
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      let targetScrollLeft = (clickRatio * container.scrollWidth) - (container.clientWidth / 2);
+      targetScrollLeft = Math.max(0, Math.min(maxScrollLeft, targetScrollLeft));
+      
+      container.scrollTo({
+        left: targetScrollLeft,
+        behavior: 'smooth'
+      });
+    };
+
+    // Drag-and-drop thumb handlers
+    let isDragging = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+
+    const handleDrag = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging || !cardsContainer.value || !trackRef.value) return;
+      
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const deltaX = clientX - startX;
+      
+      const trackWidth = trackRef.value.clientWidth;
+      const container = cardsContainer.value;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      
+      const thumbWidthPx = (thumbWidth.value / 100) * trackWidth;
+      const thumbScrollRange = trackWidth - thumbWidthPx;
+      
+      if (thumbScrollRange <= 0) return;
+      
+      const ratio = deltaX / thumbScrollRange;
+      container.scrollLeft = startScrollLeft + ratio * maxScrollLeft;
+    };
+
+    const stopDrag = () => {
+      isDragging = false;
+      window.removeEventListener('mousemove', handleDrag);
+      window.removeEventListener('touchmove', handleDrag);
+      window.removeEventListener('mouseup', stopDrag);
+      window.removeEventListener('touchend', stopDrag);
+    };
+
+    const startDrag = (e: MouseEvent | TouchEvent) => {
+      isDragging = true;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      startX = clientX;
+      if (cardsContainer.value) {
+        startScrollLeft = cardsContainer.value.scrollLeft;
+      }
+      
+      window.addEventListener('mousemove', handleDrag);
+      window.addEventListener('touchmove', handleDrag, { passive: true });
+      window.addEventListener('mouseup', stopDrag);
+      window.addEventListener('touchend', stopDrag);
+    };
+
+    // Lifecycle hooks
+    let resizeObserver: ResizeObserver | null = null;
+    
+    onMounted(() => {
+      updateScrollbar();
+      window.addEventListener('resize', updateScrollbar);
+      
+      if (typeof ResizeObserver !== 'undefined' && cardsContainer.value) {
+        resizeObserver = new ResizeObserver(updateScrollbar);
+        resizeObserver.observe(cardsContainer.value);
+      }
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', updateScrollbar);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      stopDrag();
+    });
+
     return { 
       products,
-      formatPrice
+      formatPrice,
+      cardsContainer,
+      trackRef,
+      thumbWidth,
+      thumbLeft,
+      showScrollbar,
+      updateScrollbar,
+      scrollPrev,
+      scrollNext,
+      handleTrackClick,
+      startDrag
     };
   }
 }
@@ -86,9 +250,11 @@ export default {
 
 <style scoped>
 .product-section {
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   padding: 64px 24px;
+  overflow-x: hidden;
 }
 
 .section-header {
@@ -96,7 +262,6 @@ export default {
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 40px;
-  font-family: 'Urbanist', sans-serif;
 }
 
 .section-title {
@@ -126,19 +291,9 @@ export default {
   color: #fff;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 32px;
-}
-
-.product-card {
-  cursor: pointer;
-}
-
 .image-wrapper {
+  aspect-ratio: 1 / 1;
   position: relative;
-  aspect-ratio: 3/4;
   background-color: #f3f3f3;
   border-radius: 16px;
   overflow: hidden;
@@ -160,32 +315,46 @@ export default {
   font-family: 'Inter', sans-serif;
 }
 
-.product-image {
+/* Custom Scrollbar Styles */
+.custom-scrollbar-container {
   width: 100%;
+  max-width: 400px;
+  margin: 32px auto 0 auto;
+  padding: 0 16px;
+}
+
+.scrollbar-track {
+  width: 100%;
+  height: 4px;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s, height 0.2s;
+}
+
+.scrollbar-track:hover {
+  height: 6px;
+  background-color: #d1d5db;
+}
+
+.scrollbar-thumb {
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
+  background-color: #111827;
+  border-radius: 9999px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: grab;
+  transition: background-color 0.2s;
 }
 
-.product-card:hover .product-image {
-  transform: scale(1.05);
+.scrollbar-thumb:hover {
+  background-color: #374151;
 }
 
-.product-info {
-  font-family: 'Urbanist', sans-serif;
-}
-
-.product-name {
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 4px 0;
-  font-size: 16px;
-}
-
-.product-price {
-  font-weight: 900;
-  color: #111827;
-  font-size: 18px;
-  margin: 0;
+.scrollbar-thumb:active {
+  cursor: grabbing;
+  background-color: #000000;
 }
 </style>

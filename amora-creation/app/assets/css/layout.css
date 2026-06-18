@@ -1,0 +1,61 @@
+/* Lets go for mobile first*/
+
+.main-layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.cards-layout {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    width: 100%;
+    height: auto;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+/* Hide native scrollbar */
+.cards-layout::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+}
+
+/* Largeur de la barre de défilement pour les autres éléments */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+/* La piste (le fond de la barre) */
+::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+
+/* Le curseur (la partie que l'on fait glisser) */
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+/* Le curseur au survol */
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+@media (min-width: 768px) {
+    .cards-layout {
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+}
