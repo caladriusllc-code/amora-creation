@@ -1,22 +1,23 @@
 <template>
   <div class="page-container">
     <Header />
-
     <main>
+      <heroSection />
       <ProductGrid />
     </main>
-
-    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import Header from '../components/header.vue';
 import ProductGrid from '../components/productGrid.vue';
+import heroSection from '../components/layout/heroSection.vue';
 
 export default {
   components: {
     Header,
-    ProductGrid
+    ProductGrid,
+    heroSection
   },
   setup() {
     return {};

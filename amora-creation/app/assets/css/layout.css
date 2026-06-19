@@ -10,6 +10,13 @@
     overflow-x: hidden;
 }
 
+.main-layout h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+}
+
 .cards-layout {
     display: flex;
     overflow-x: auto;
