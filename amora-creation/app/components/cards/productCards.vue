@@ -60,7 +60,7 @@ export default {
     aspect-ratio: 1 / 1;
     position: relative;
     background-color: #f3f3f3;
-    border-radius: 16px;
+    border-radius: 4px;
     overflow: hidden;
     margin-bottom: 16px;
     }
@@ -73,11 +73,10 @@ export default {
     color: white;
     font-size: 10px;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 1px;
     font-weight: bold;
     text-transform: uppercase;
     z-index: 10;
-    font-family: 'Inter', sans-serif;
     }
 
     .product-image {

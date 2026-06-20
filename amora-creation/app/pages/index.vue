@@ -1,21 +1,20 @@
 <template>
   <div class="page-container">
-    <Header />
+    <Mainheader/>
     <main>
       <heroSection />
-      <ProductGrid />
     </main>
   </div>
 </template>
 
 <script lang="ts">
-import Header from '../components/header.vue';
-import ProductGrid from '../components/productGrid.vue';
+import Mainheader from '../components/navigator/header.vue'
+import ProductGrid from '../components/layout/productGrid.vue';
 import heroSection from '../components/layout/heroSection.vue';
 
 export default {
   components: {
-    Header,
+    Mainheader,
     ProductGrid,
     heroSection
   },

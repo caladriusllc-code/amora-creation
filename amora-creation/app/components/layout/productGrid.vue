@@ -1,7 +1,7 @@
 <template>
   <section class="product-section">
     <div class="section-header">
-      <h2 class="section-title">Nos derniers produits</h2>
+      <h2 class="section-title">Produits de la collection</h2>
       <div class="slider-controls" v-show="showScrollbar">
         <button class="control-btn" @click="scrollPrev" aria-label="Previous products">&larr;</button>
         <button class="control-btn" @click="scrollNext" aria-label="Next products">&rarr;</button>
@@ -35,7 +35,7 @@
 
 <script lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import ProductCards from './cards/productCards.vue';
+import ProductCards from '../cards/productCards.vue';
 
 // Typage strict des données pour l'API
 interface Product {
