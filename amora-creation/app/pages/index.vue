@@ -3,20 +3,21 @@
     <Mainheader/>
     <main>
       <heroSection />
+      <productsCategory title="Catégories de produits"/>
     </main>
   </div>
 </template>
 
 <script lang="ts">
 import Mainheader from '../components/navigator/header.vue'
-import ProductGrid from '../components/layout/productGrid.vue';
 import heroSection from '../components/layout/heroSection.vue';
+import productsCategory from '../components/layout/ProductsCategory.vue'
 
 export default {
   components: {
     Mainheader,
-    ProductGrid,
-    heroSection
+    heroSection,
+    productsCategory
   },
   setup() {
     return {};

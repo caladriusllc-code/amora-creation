@@ -1,7 +1,7 @@
 <template>
   <section class="product-section" id="grid-products">
     <div class="section-header">
-      <h2 class="section-title">Produits de la collection</h2>
+      <h2 class="section-title">{{ title }}</h2>
       <div class="slider-controls" v-show="showScrollbar">
         <button class="control-btn" @click="scrollPrev" aria-label="Previous products">&larr;</button>
         <button class="control-btn" @click="scrollNext" aria-label="Next products">&rarr;</button>
@@ -49,6 +49,12 @@ interface Product {
 export default {
   components:{
     ProductCards
+  },
+  props:{
+    title:{
+      type:String,
+      default:"Produits de la collection"
+    }
   },
   setup() {
     const products = ref<Product[]>([
