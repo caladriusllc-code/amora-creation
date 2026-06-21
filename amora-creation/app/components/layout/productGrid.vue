@@ -1,5 +1,5 @@
 <template>
-  <section class="product-section">
+  <section class="product-section" id="grid-products">
     <div class="section-header">
       <h2 class="section-title">Produits de la collection</h2>
       <div class="slider-controls" v-show="showScrollbar">

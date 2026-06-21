@@ -4,12 +4,11 @@
             <div class="overlay">
                 <h1>Nouvelle collection</h1>
                 <p>Découvrez nos dernières créations</p>
-                <goToButton />
+                <goToButton @click="scrollToGrid"/>
             </div>
         </div>
 
         <product-grid/>
-        
     </section>
 </template>
 
@@ -27,37 +26,50 @@ export default {
         productCards,
         productGrid
     },
-    data() {
-        return {
-            // Liste fictive de nos créations pour remplir la section
-            products: [
-                { 
-                    id: 1, 
-                    name: "Robe d'été Élégance", 
-                    price:120, 
-                    image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80" 
-                },
-                { 
-                    id: 2, 
-                    name: "Veste en Lin Classique", 
-                    price:150, 
-                    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80" 
-                },
-                { 
-                    id: 3, 
-                    name: "Chemisier Soie Douce", 
-                    price:85, 
-                    image: "https://images.unsplash.com/photo-1551163943-3f6a855d1153?w=600&q=80" 
-                },
-                { 
-                    id: 4, 
-                    name: "Pantalon Taille Haute", 
-                    price:95, 
-                    image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&q=80" 
-                }
-            ]
-        };
-    }
+
+    setup(){
+
+        const products = [
+            { 
+                id: 1, 
+                name: "Robe d'été Élégance", 
+                price:120, 
+                image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80" 
+            },
+            { 
+                id: 2, 
+                name: "Veste en Lin Classique", 
+                price:150, 
+                image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80" 
+            },
+            { 
+                id: 3, 
+                name: "Chemisier Soie Douce", 
+                price:85, 
+                image: "https://images.unsplash.com/photo-1551163943-3f6a855d1153?w=600&q=80" 
+            },
+            { 
+                id: 4, 
+                name: "Pantalon Taille Haute", 
+                price:95, 
+                image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&q=80" 
+            }
+        ]
+
+        const scrollToGrid = ()=> {
+            const element = document.getElementById("grid-products");
+
+            if(element){
+                element.scrollIntoView({behavior: 'smooth'})
+            }
+        }
+
+        return{
+            products,
+            scrollToGrid
+        }
+
+    },
 }
 </script>
 

@@ -44,7 +44,7 @@
 
     <transition name="menu-slide">
       <div v-if="isSearchOpen" class="mobile-search-dropdown">
-        <BaseResearchInput placeholder="Que recherchez-vous ?" />
+        <BaseResearchInput placeholder="Que recherchez-vous ?" v-model="query"/>
       </div>
     </transition>
 
@@ -71,6 +71,7 @@ export default {
   setup() {
     const isMenuOpen = ref(false);
     const isSearchOpen = ref(false); // Nouvelle variable pour la recherche mobile
+    const query = ref('')
 
     const toggleMenu = () => {
       isMenuOpen.value = !isMenuOpen.value;
@@ -116,7 +117,7 @@ export default {
     });
 
     return { 
-      isMenuOpen, toggleMenu, closeMenu, 
+      isMenuOpen, toggleMenu, query, closeMenu, 
       isSearchOpen, toggleSearch,
       showHeader, isAtTop 
     };
@@ -158,6 +159,7 @@ export default {
 }
 
 .header--solid .main-nav {
+  width: 100%;
   background: rgba(255, 255, 255, 0.98); 
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -187,7 +189,7 @@ export default {
 }
 
 .main-nav {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px 24px;
   display: flex;

@@ -1,13 +1,13 @@
 <template>
     <div class="search-container" :class="{ 'is-focused': isFocused, 'has-value': !!modelValue }">
         <div class="search-wrapper">
-            <span class="search-icon">
+          <span class="search-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
             </svg>
-            </span>
+          </span>
 
-            <input
+          <input
             type="text"
             class="search-input"
             :value="modelValue"
@@ -16,19 +16,19 @@
             @focus="isFocused = true"
             @blur="isFocused = false"
             v-bind="$attrs"
-            />
+          />
 
-            <button 
+          <button 
             v-if="modelValue" 
             type="button" 
             class="clear-button" 
             @click="clearSearch"
             aria-label="Effacer la recherche"
-            >
+          >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
-            </button>
+          </button>
         </div>
     </div>
 </template>
@@ -42,10 +42,14 @@ interface Props {
 }
 export default{
     props:{
-        placeholder:{
-            type:String,
-            default:'Rechercher...'
-        }
+      placeholder:{
+        type:String,
+        default:'Rechercher...'
+      },
+      modelValue:{
+        type:String,
+        default:""
+      }
     },
     emits:['update:modelValue', 'search', 'clear'],
     setup(props, {emit}){
