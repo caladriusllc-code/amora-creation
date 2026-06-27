@@ -1,7 +1,7 @@
 <template>
   <section class="product-section" id="grid-products">
     <div class="section-header">
-      <h2 class="section-title">Produits de la collection</h2>
+      <h2 class="section-title">Categorie de produits</h2>
       <div class="slider-controls" v-show="showScrollbar">
         <button class="control-btn" @click="scrollPrev" aria-label="Previous products">&larr;</button>
         <button class="control-btn" @click="scrollNext" aria-label="Next products">&rarr;</button>
@@ -52,31 +52,38 @@ export default {
     const products = ref<Product[]>([
       { 
         id: 1, 
-        name: 'Robe d\'Automne', 
+        name: 'Robe de soirée', 
         price: 35000, 
-        image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80', 
+        image: 'https://images.unsplash.com/photo-1612336307429-8a898d10e223?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
         sale: false 
       },
       { 
         id: 2, 
-        name: 'Chemise Grise', 
+        name: 'Robe décontractée', 
         price: 25000, 
-        image: 'https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=600&q=80', 
+        image: 'https://images.unsplash.com/photo-1631234764568-996fab371596?q=80&w=3087&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
         sale: false 
       },
       { 
         id: 3, 
-        name: 'Manteau en Cuir', 
+        name: 'Ensemble tailleur', 
         price: 65000, 
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&q=80', 
+        image: 'https://images.unsplash.com/photo-1715408153725-186c6c77fb45?q=80&w=1065&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
         sale: true 
       },
       { 
         id: 4, 
-        name: 'Foulard en Soie', 
+        name: 'Jean', 
         price: 15000, 
-        image: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=600&q=80', 
-        sale: false 
+        image: 'https://images.unsplash.com/photo-1714729382668-7bc3bb261662?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+        sale: false,
+      },
+      { 
+        id: 5, 
+        name: 'T-shirt', 
+        price: 15000, 
+        image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=2112&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+        sale: false,
       },
     ]);
 

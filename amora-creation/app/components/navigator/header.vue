@@ -140,6 +140,7 @@ export default {
 }
 
 .header--transparent .main-nav {
+  width: 100%;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -189,7 +190,7 @@ export default {
 }
 
 .main-nav {
-  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 20px 24px;
   display: flex;

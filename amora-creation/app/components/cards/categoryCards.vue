@@ -8,7 +8,7 @@
         <div class="card-footer w-full flex flex-row items-center justify-between mt-4">
             <div class="category-info">
                 <h3 class="category-title">{{ title }}</h3>
-                <p class="category-action">Découvrir la sélection</p>
+                <p class="category-action">Découvrir la catégorie</p>
             </div>
             
             <div class="arrow-icon">
