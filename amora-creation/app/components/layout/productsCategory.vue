@@ -2,6 +2,7 @@
   <section class="product-section" id="grid-products">
     <div class="section-header">
       <h2 class="section-title">Categorie de produits</h2>
+      <p class="section-subtitle">Découvrez toutes nos catégories de vêtements</p>
       <div class="slider-controls" v-show="showScrollbar">
         <button class="control-btn" @click="scrollPrev" aria-label="Previous products">&larr;</button>
         <button class="control-btn" @click="scrollNext" aria-label="Next products">&rarr;</button>
