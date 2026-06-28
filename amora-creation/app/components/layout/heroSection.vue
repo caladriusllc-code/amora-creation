@@ -1,14 +1,14 @@
 <template>
     <section class="main-layout">
-        <div class="pic-background">
+        <div class="pic-background" :style="{ backgroundImage: `url(${backgroundImage})` }">
             <div class="overlay">
-                <h1>Nouvelle collection</h1>
-                <p>Découvrez nos dernières créations</p>
+                <h1>{{ title }}</h1>
+                <p>{{ subtitle }}</p>
                 <goToButton @click="scrollToGrid"/>
             </div>
         </div>
 
-        <product-grid/>
+        <product-grid />
     </section>
 </template>
 
@@ -20,6 +20,21 @@ import productGrid from '../layout/productGrid.vue'
 
 export default {
     name: 'HeroSection',
+    props:{
+        title:{
+            type: String,
+            default: "Nouvelle collection"
+        },
+        subtitle:{
+            type: String,
+            default: "Découvrez nos dernières créations"
+        },
+        // Ajout de la troisième prop pour l'image
+        backgroundImage:{
+            type: String,
+            default: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        },
+    },
     components: {
         goToButton,
         scrollBar,
@@ -84,12 +99,11 @@ export default {
     /* Largeur totale */
     width: 100%;
     
-    /* Hauteur pour ordinateur : 50% de l'écran, avec un minimum pour que le texte rentre */
+    /* Hauteur pour ordinateur : 70% de l'écran, avec un minimum pour que le texte rentre */
     height: 70vh; 
     min-height: 400px; 
     
-    /* Image de fond */
-    background-image: url('https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    /* L'image de fond a été retirée d'ici car elle est maintenant gérée dans le template ! */
     background-size: cover; /* L'image couvre tout l'espace sans se déformer */
     background-position: center; /* L'image reste bien centrée */
     background-repeat: no-repeat;
