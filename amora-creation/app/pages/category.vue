@@ -3,16 +3,16 @@
         <Mainheader/>
         <main>
             <heroSection
-                title="Robes de soirées"
-                subtitle="Toutes nos robes de soirées"
-                backgroundImage="https://images.unsplash.com/photo-1612336307429-8a898d10e223?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              title="Robes de soirées"
+              subtitle="Toutes nos robes de soirées"
+              backgroundImage="https://images.unsplash.com/photo-1612336307429-8a898d10e223?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             />
             <productsCategory title="Catégories de produits"/>
-            <productGrid 
-            title="Nos produits les plus demandés"
-            subtitle="Découvrez nos produits les plus demandés"
-            :products="products"
-            />
+              <productGrid 
+                title="Nos produits les plus demandés"
+                subtitle="Découvrez nos produits les plus demandés"
+                :products="products"
+              />
 
         </main>
         <footerSection/>
