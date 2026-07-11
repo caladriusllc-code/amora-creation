@@ -9,7 +9,7 @@
             
             <div ref="cardsContainer" class="cards-layout">
                 <article class="second-pic">
-                    <img src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt="">
+                    <img src="../../assets/fashion/BCO.9a51f253-80c6-4638-b350-1cdce66a38ef.png" alt="">
                 </article>
                 <article class="second-pic">
                     <img src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt="">
@@ -32,16 +32,20 @@
                     ></div>
                 </div>
             </div>
+
+            <productSizes/>
+
+            <productColors/>
         </div>
         <div class="product-detail">
-            <h1 class="product-name">Robe d'été Élégance</h1>
-            <p class="product-price">12 000 FCFA</p>
+            <h2 class="product-name">Robe d'été Élégance</h2>
             <p class="product-description">
                 Lorem ipsum dolor sit amet consectetur adipisicing elit. 
                 Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. 
                 Quisquam, quod.
             </p>
-            <button class="add-to-cart-btn">Ajouter au panier</button>
+            <p class="product-price">12 000 FCFA</p>
+            <cartButton/>
         </div>
     </div>
 </template>
@@ -50,10 +54,16 @@
 import { ref, onMounted } from 'vue';
 import productGrid from '../layout/productGrid.vue';
 import productCategory from '../layout/productsCategory.vue'
+import cartButton from '../buttons/cartButton.vue'
+import productSizes from '../tools/productSizes.vue'
+import productColors from '../tools/productColors.vue'
 export default {
     components:{
         productGrid,
-        productCategory
+        productCategory,
+        cartButton,
+        productSizes,
+        productColors
     },
     setup() {
         // Refs pour le scrolling
@@ -188,8 +198,109 @@ export default {
 </script>
 
 <style scoped>
+/* =========================================
+   STYLES MOBILE (Téléphone) - Par défaut
+   ========================================= */
+
+/* 1. Conteneur principal limité à la largeur de l'écran */
+.product-detail-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* 2. Conteneur des images limité à 100% */
+.pic-detail-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+}
+
+.main-pic img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+.product-detail{
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.product-name {
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+/* 3. LE POINT CLÉ MOBILE : Les miniatures côte à côte et scrollables */
+.cards-layout {
+    display: flex;
+    flex-direction: row; /* Aligne les images horizontalement */
+    overflow-x: auto; /* Active le défilement horizontal */
+    width: 100%;
+    gap: 12px; /* Espace entre les images */
+    padding: 5px;
+    
+    /* Masque la barre de défilement par défaut du navigateur 
+       pour laisser ta barre personnalisée (custom-scrollbar) faire le travail */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+.cards-layout::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+}
+
+/* 4. On force les miniatures à garder leur taille */
+.second-pic {
+    flex-shrink: 0; /* Empêche les images de s'écraser les unes sur les autres */
+    width: 45%; /* Largeur de tes miniatures sur mobile */
+    height: 220px; /* Hauteur de tes miniatures (à ajuster selon tes photos) */
+}
+
+.second-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px; /* Un petit bord arrondi chic pour Amora création */
+}
+
+/* Styles pour ta barre de défilement personnalisée sur mobile */
+.custom-scrollbar-container {
+    width: 100%;
+    height: 6px;
+    background-color: #f0f0f0;
+    margin-top: 10px;
+    border-radius: 4px;
+    position: relative;
+}
+
+.scrollbar-track {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+}
+
+.scrollbar-thumb {
+    height: 100%;
+    background-color: #333; /* Couleur de la barre de progression */
+    border-radius: 4px;
+    position: absolute;
+    top: 0;
+}
+
+
+
+
+/* =========================================
+   STYLES DESKTOP / LAPTOP (Écrans larges)
+   ========================================= */
 @media (min-width: 768px) {
-    /* 1. On met l'image principale et les infos produit côte à côte */
+    /* ... Ton code existant pour le desktop reste ici sans changement ... */
     .product-detail-layout {
         flex-direction: row;
         align-items: flex-start;
@@ -198,42 +309,36 @@ export default {
         padding: 2rem;
     }
 
-    /* 2. On réorganise les images (miniatures à gauche, principale à droite) */
     .pic-detail-layout {
         flex-direction: row-reverse; 
         align-items: flex-start;
-        width: 50%; /* La moitié de l'écran pour les images */
+        width: 50%;
     }
 
-    /* 3. L'image principale s'adapte à l'espace disponible */
     .main-pic {
         flex: 1;
         margin-bottom: 0;
     }
 
-    /* 4. LE POINT CLÉ : Les miniatures passent en colonne */
     .cards-layout {
         flex-direction: column;
-        overflow-y: auto; /* Active le scroll vertical si besoin */
+        overflow-y: auto; 
         overflow-x: hidden;
         height: 100%;
-        max-height: 500px; /* À ajuster selon la taille de ton image principale */
+        max-height: 500px; 
         padding: 0;
         gap: 1rem;
     }
 
-    /* 5. Ajustement de la taille des miniatures pour la colonne */
     .second-pic {
         width: 100px; 
         margin-bottom: 0;
     }
 
-    /* 6. On cache la barre de scroll horizontale customisée sur desktop */
     .custom-scrollbar-container {
         display: none;
     }
 
-    /* 7. Ajustement du conteneur des détails du produit */
     .product-detail {
         width: 50%;
         padding-left: 2rem;
