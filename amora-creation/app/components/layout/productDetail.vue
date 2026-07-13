@@ -12,7 +12,7 @@
                     <img src="../../assets/fashion/BCO.9a51f253-80c6-4638-b350-1cdce66a38ef.png" alt="">
                 </article>
                 <article class="second-pic">
-                    <img src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt="">
+                    <img src="../../assets/fashion/BCO.552ee5f9-0533-44b6-b203-54968fcd8218.png" alt="">
                 </article>
                 <article class="second-pic">
                     <img src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt="">
@@ -32,10 +32,6 @@
                     ></div>
                 </div>
             </div>
-
-            <productSizes/>
-
-            <productColors/>
         </div>
         <div class="product-detail">
             <h2 class="product-name">Robe d'été Élégance</h2>
@@ -44,9 +40,15 @@
                 Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. 
                 Quisquam, quod.
             </p>
-            <p class="product-price">12 000 FCFA</p>
-            <cartButton/>
+            <div class="buy-section">
+                <p class="product-price">12 000 FCFA</p>
+                <cartButton @click="$emit('addToCart')"/>
+            </div>
         </div>
+
+        <productSizes/>
+
+        <productColors/>
     </div>
 </template>
 
@@ -65,6 +67,7 @@ export default {
         productSizes,
         productColors
     },
+    emits: ['addToCart'],
     setup() {
         // Refs pour le scrolling
         const cardsContainer = ref<HTMLElement | null>(null);
@@ -216,6 +219,7 @@ export default {
     flex-direction: column;
     width: 100%;
     max-width: 100%;
+    padding: 0.2rem;
 }
 
 .main-pic img {
@@ -293,8 +297,20 @@ export default {
     top: 0;
 }
 
+.product-price {
+    font-weight: 900;
+    color: #111827;
+    font-size: 18px;
+    margin: 0;
+}
 
-
+.buy-section{
+    width: 100%;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    gap: 1rem;
+}
 
 /* =========================================
    STYLES DESKTOP / LAPTOP (Écrans larges)

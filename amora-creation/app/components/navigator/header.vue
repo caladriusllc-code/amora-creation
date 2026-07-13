@@ -12,7 +12,7 @@
     </div>
     
     <nav class="main-nav">
-      <div class="logo">Amora.</div>
+      <div class="logo" @click="()=>router.push('/')">Amora.</div>
       
       <ul class="nav-links">
         <li class="active">Shop</li>
@@ -63,12 +63,16 @@
 
 <script lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import cartButton from '../buttons/cartButton.vue';
 import BaseResearchInput from '../input/BaseResarchInput.vue';
 
 export default {
   components: { cartButton, BaseResearchInput },
   setup() {
+
+    const router = useRouter();
+
     const isMenuOpen = ref(false);
     const isSearchOpen = ref(false); // Nouvelle variable pour la recherche mobile
     const query = ref('')
@@ -117,9 +121,15 @@ export default {
     });
 
     return { 
-      isMenuOpen, toggleMenu, query, closeMenu, 
-      isSearchOpen, toggleSearch,
-      showHeader, isAtTop 
+      router,
+      isMenuOpen, 
+      toggleMenu, 
+      query, 
+      closeMenu, 
+      isSearchOpen, 
+      toggleSearch,
+      showHeader, 
+      isAtTop
     };
   }
 }

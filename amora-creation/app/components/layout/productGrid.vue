@@ -3,10 +3,6 @@
     <div class="section-header">
       <h2 class="section-title">{{ title }}</h2>
       <p class="section-subtitle">{{ subtitle }}</p>
-      <div class="slider-controls" v-show="showScrollbar">
-        <button class="control-btn" @click="scrollPrev" aria-label="Previous products">&larr;</button>
-        <button class="control-btn" @click="scrollNext" aria-label="Next products">&rarr;</button>
-      </div>
     </div>
     
     <div class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
@@ -251,11 +247,6 @@ onUnmounted(() => {
   font-weight: 700;
   text-transform: uppercase;
   margin: 0;
-}
-
-.slider-controls {
-  display: flex;
-  gap: 8px;
 }
 
 .control-btn {
