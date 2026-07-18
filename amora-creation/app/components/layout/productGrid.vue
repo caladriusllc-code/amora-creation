@@ -13,6 +13,8 @@
         :name="product.name"
         :price="product.price"
         :sale="product.sale"
+        @addToCart="addToCart(product.id)"
+        @goToProductDetail="goToProductDetail(product.id)"
       />
     </div>
 
@@ -33,6 +35,8 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 // Attention ici : J'ai mis un "P" majuscule à ProductCards.vue pour éviter l'erreur Vetur !
 import ProductCards from '../cards/ProductCards.vue'; 
+import { useRouter } from 'vue-router';
+
 
 // Typage strict des données
 interface Product {
@@ -117,27 +121,6 @@ const updateScrollbar = () => {
   thumbLeft.value = progress * (100 - calculatedWidth);
 };
 
-// Navigation buttons handlers
-const scrollPrev = () => {
-  const container = cardsContainer.value;
-  if (!container) return;
-  const scrollAmount = container.clientWidth * 0.75;
-  container.scrollBy({
-    left: -scrollAmount,
-    behavior: 'smooth'
-  });
-};
-
-const scrollNext = () => {
-  const container = cardsContainer.value;
-  if (!container) return;
-  const scrollAmount = container.clientWidth * 0.75;
-  container.scrollBy({
-    left: scrollAmount,
-    behavior: 'smooth'
-  });
-};
-
 // Track click handler
 const handleTrackClick = (e: MouseEvent) => {
   const track = trackRef.value;
@@ -206,6 +189,22 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
 
 // Lifecycle hooks
 let resizeObserver: ResizeObserver | null = null;
+
+// About products settings
+const router = useRouter();
+
+function addToCart(id:string){
+
+  console.log("Produit ajouté au panier!");
+
+}
+
+function goToProductDetail(id:string){
+
+  router.push('/product-detail');
+  console.log("Allons à la page de detail");
+
+}
 
 onMounted(() => {
   updateScrollbar();

@@ -1,24 +1,27 @@
 <template>
   <header 
     class="site-header" 
-    :class="{ 
-      'header--hidden': !showHeader, 
-      'header--transparent': isAtTop && !isMenuOpen && !isSearchOpen, 
-      'header--solid': !isAtTop || isMenuOpen || isSearchOpen
-    }"
+    :class="[
+      `theme--${theme}`,
+      { 
+        'header--hidden': !showHeader, 
+        'header--transparent': theme === 'transparent' && isAtTop && !isMenuOpen && !isSearchOpen, 
+        'header--solid': theme === 'transparent' && (!isAtTop || isMenuOpen || isSearchOpen)
+      }
+    ]"
   >
     <div class="top-bar">
       Sign up and get 20% off to your first order. <a href="#" class="top-bar-link">Sign up now</a>
     </div>
     
     <nav class="main-nav">
-      <div class="logo" @click="()=>router.push('/')">Amora.</div>
+      <div class="logo">Amora.</div>
       
       <ul class="nav-links">
-        <li class="active">Shop</li>
-        <li>Most Wanted</li>
-        <li>New Arrivals</li>
-        <li>Brands</li>
+        <li class="active"><NuxtLink to="/Collection">Collection</NuxtLink></li>
+        <li><NuxtLink to="/categories">Categories</NuxtLink></li>
+        <li><NuxtLink to="/tendances">Tendances</NuxtLink></li>
+        <li><NuxtLink to="/soldes">Soldes</NuxtLink></li>
       </ul>
 
       <div class="nav-actions">
@@ -51,10 +54,10 @@
     <transition name="menu-slide">
       <div v-if="isMenuOpen" class="mobile-menu">
         <ul class="mobile-nav-links">
-          <li class="active" @click="closeMenu">Shop</li>
-          <li @click="closeMenu">Most Wanted</li>
-          <li @click="closeMenu">New Arrivals</li>
-          <li @click="closeMenu">Brands</li>
+          <li class="active" @click="closeMenu">Collection</li>
+          <li @click="closeMenu"><NuxtLink to="/categories">Categories</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/tendances">Tendances</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/soldes">Soldes</NuxtLink></li>
         </ul>
       </div>
     </transition>
@@ -69,43 +72,45 @@ import BaseResearchInput from '../input/BaseResarchInput.vue';
 
 export default {
   components: { cartButton, BaseResearchInput },
+  // 1. AJOUT DE LA PROPRIÉTÉ THEME
+  props: {
+    theme: {
+      type: String,
+      default: 'transparent', // Peut être 'transparent', 'light', ou 'dark'
+    }
+  },
   setup() {
-
     const router = useRouter();
 
     const isMenuOpen = ref(false);
-    const isSearchOpen = ref(false); // Nouvelle variable pour la recherche mobile
+    const isSearchOpen = ref(false); 
     const query = ref('')
 
     const toggleMenu = () => {
       isMenuOpen.value = !isMenuOpen.value;
-      if (isMenuOpen.value) isSearchOpen.value = false; // Ferme la recherche si on ouvre le menu
+      if (isMenuOpen.value) isSearchOpen.value = false; 
     };
 
     const toggleSearch = () => {
       isSearchOpen.value = !isSearchOpen.value;
-      if (isSearchOpen.value) isMenuOpen.value = false; // Ferme le menu si on ouvre la recherche
+      if (isSearchOpen.value) isMenuOpen.value = false; 
     };
 
     const closeMenu = () => isMenuOpen.value = false;
     
-    // --- VARIABLES POUR LE SCROLL ---
     const showHeader = ref(true); 
     const isAtTop = ref(true);   
     let lastScrollPosition = 0;  
 
     const handleScroll = () => {
       const currentScrollPosition = window.scrollY;
-
       isAtTop.value = currentScrollPosition < 50;
 
       if (currentScrollPosition > lastScrollPosition && currentScrollPosition > 100) {
-        // On descend : on cache la nav et on referme les menus ouverts
         showHeader.value = false;
         isMenuOpen.value = false;
         isSearchOpen.value = false;
       } else {
-        // On monte : on affiche la nav
         showHeader.value = true;
       }
 
@@ -149,43 +154,52 @@ export default {
   transform: translateY(-100%);
 }
 
+/* ======= THEMES DYNAMIQUES ======= */
+
+/* 1. Theme Transparent (Par défaut) */
 .header--transparent .main-nav {
-  width: 100%;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 .header--transparent .logo,
-.header--transparent .nav-links li {
-  color: #ffffff;
-}
-.header--transparent .hamburger span {
-  background: #ffffff;
-}
-.header--transparent .top-bar-link {
-  color: #ffffff;
-}
-.header--transparent .mobile-search-toggle svg {
-  stroke: #ffffff;
-}
+.header--transparent .nav-links li,
+.header--transparent .top-bar-link { color: #ffffff; }
+.header--transparent .hamburger span { background: #ffffff; }
+.header--transparent .mobile-search-toggle svg { stroke: #ffffff; }
 
-.header--solid .main-nav {
-  width: 100%;
+/* 2. Theme Light (Fond blanc, texte noir) - Activé au scroll ou via theme="light" */
+.header--solid .main-nav,
+.theme--light .main-nav {
   background: rgba(255, 255, 255, 0.98); 
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 .header--solid .logo,
-.header--solid .nav-links li {
-  color: #000000;
+.header--solid .nav-links li,
+.theme--light .logo,
+.theme--light .nav-links li { color: #000000; }
+.header--solid .hamburger span,
+.theme--light .hamburger span { background: #000000; }
+.header--solid .mobile-search-toggle svg,
+.theme--light .mobile-search-toggle svg { stroke: #000000; }
+
+/* 3. Theme Dark (Fond noir, texte blanc) - Activé via theme="dark" */
+.theme--dark .main-nav {
+  background: rgba(0, 0, 0, 0.98); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.05);
 }
-.header--solid .hamburger span {
-  background: #000000;
-}
-.header--solid .mobile-search-toggle svg {
-  stroke: #000000;
-}
+.theme--dark .logo,
+.theme--dark .nav-links li { color: #ffffff; }
+.theme--dark .hamburger span { background: #ffffff; }
+.theme--dark .mobile-search-toggle svg { stroke: #ffffff; }
+/* Inversion de la top bar pour le thème sombre */
+.theme--dark .top-bar { background-color: #ffffff; color: #000000; }
+.theme--dark .top-bar-link { color: #000000; }
+
 
 /* ======= Styles restants ======= */
 .top-bar {
@@ -215,6 +229,7 @@ export default {
   font-family: 'Urbanist', sans-serif;
   text-transform: uppercase;
   transition: color 0.4s ease;
+  cursor: pointer;
 }
 
 .nav-links { display: flex; list-style: none; gap: 32px; font-size: 14px; text-transform: uppercase; font-weight: 600;}
@@ -228,7 +243,7 @@ export default {
 
 /* Mobile Search Toggle Button */
 .mobile-search-toggle {
-  display: none; /* Caché sur ordinateur */
+  display: none; 
   background: none;
   border: none;
   cursor: pointer;
@@ -242,8 +257,9 @@ export default {
   transition: stroke 0.4s ease;
 }
 
-/* Mobile Search Dropdown */
-.mobile-search-dropdown {
+/* Menus déroulants Mobiles (Gère l'adaptation au thème sombre) */
+.mobile-search-dropdown,
+.mobile-menu {
   position: absolute;
   top: 100%;
   left: 0;
@@ -251,9 +267,22 @@ export default {
   background: white;
   padding: 1rem 1.5rem;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-  z-index: 48;
+  z-index: 49;
   box-sizing: border-box;
   border-top: 1px solid #f0f0f0;
+}
+.mobile-nav-links { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.mobile-nav-links li { font-size: 16px; font-weight: 500; text-transform: uppercase; color: #4b5563; padding: 8px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+
+/* Ajustements pour le thème dark sur le menu mobile */
+.theme--dark .mobile-search-dropdown,
+.theme--dark .mobile-menu {
+  background: #000000;
+  border-top: 1px solid #333;
+}
+.theme--dark .mobile-nav-links li {
+  color: #ffffff;
+  border-bottom: 1px solid #333;
 }
 
 /* Hamburger Menu */
@@ -272,21 +301,6 @@ export default {
 .hamburger.is-active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
 .hamburger.is-active span:nth-child(2) { opacity: 0; }
 .hamburger.is-active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
-
-/* Menu Mobile Styles */
-.mobile-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background: white;
-  padding: 1.5rem;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-  z-index: 49;
-  box-sizing: border-box; 
-}
-.mobile-nav-links { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
-.mobile-nav-links li { font-size: 16px; font-weight: 500; text-transform: uppercase; color: #4b5563; padding: 8px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
 
 /* Animations menu slide */
 .menu-slide-enter-active,

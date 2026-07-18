@@ -1,5 +1,6 @@
 <template>
     <div class="product-detail-layout">
+        
         <div class="pic-detail-layout">
             <article class="main-pic">
                 <img 
@@ -33,22 +34,26 @@
                 </div>
             </div>
         </div>
-        <div class="product-detail">
-            <h2 class="product-name">Robe d'été Élégance</h2>
-            <p class="product-description">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. 
-                Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. 
-                Quisquam, quod.
-            </p>
-            <div class="buy-section">
-                <p class="product-price">12 000 FCFA</p>
-                <cartButton @click="$emit('addToCart')"/>
+
+        <div class="info-detail-layout">
+            <div class="product-detail">
+                <h2 class="product-name">Robe d'été Élégance</h2>
+                <p class="product-description">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. 
+                    Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. 
+                    Quisquam, quod.
+                </p>
+                <div class="buy-section">
+                    <p class="product-price">12 000 FCFA</p>
+                </div>
+                <shopButton @click="$emit('addToCart')"/>
             </div>
+
+            <productSizes/>
+
+            <productColors/>
         </div>
-
-        <productSizes/>
-
-        <productColors/>
+        
     </div>
 </template>
 
@@ -59,13 +64,16 @@ import productCategory from '../layout/productsCategory.vue'
 import cartButton from '../buttons/cartButton.vue'
 import productSizes from '../tools/productSizes.vue'
 import productColors from '../tools/productColors.vue'
+import shopButton from '../buttons/shopButton.vue'
+
 export default {
     components:{
         productGrid,
         productCategory,
         cartButton,
         productSizes,
-        productColors
+        productColors,
+        shopButton
     },
     emits: ['addToCart'],
     setup() {
@@ -114,12 +122,10 @@ export default {
 
             isDragging = true;
 
-            // Récupère la coordonnée X de l'événement (souris ou tactile)
             const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
             startX = clientX;
             startScrollLeft = container.scrollLeft;
 
-            // Ajoute les écouteurs globaux pour suivre le mouvement
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', stopDrag);
             document.addEventListener('touchmove', onDrag, { passive: false });
@@ -138,7 +144,6 @@ export default {
             const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
             const deltaX = clientX - startX;
 
-            // Convertit le déplacement du curseur en défilement proportionnel
             const trackWidth = track.offsetWidth;
             const maxScrollLeft = container.scrollWidth - container.clientWidth;
             const ratio = maxScrollLeft / (trackWidth * (1 - thumbWidth.value / 100));
@@ -156,7 +161,7 @@ export default {
             document.removeEventListener('touchend', stopDrag);
         };
 
-        // Clic sur la piste : amène le scroll à l'endroit cliqué
+        // Clic sur la piste
         const handleTrackClick = (e: MouseEvent) => {
             const container = cardsContainer.value;
             const track = trackRef.value;
@@ -166,7 +171,6 @@ export default {
             const clickX = e.clientX - rect.left;
             const trackWidth = rect.width;
 
-            // Calcule la nouvelle position de défilement
             const thumbWidthPx = (thumbWidth.value / 100) * trackWidth;
             const maxScrollLeft = container.scrollWidth - container.clientWidth;
             const targetScroll = ((clickX - thumbWidthPx / 2) / (trackWidth - thumbWidthPx)) * maxScrollLeft;
@@ -177,12 +181,11 @@ export default {
             });
         };
 
-        // Surveillance du scroll natif pour synchroniser la scrollbar
         onMounted(() => {
             const container = cardsContainer.value;
             if (container) {
             container.addEventListener('scroll', updateScrollbar);
-            updateScrollbar(); // initialisation
+            updateScrollbar(); 
             }
         });
 
@@ -205,7 +208,6 @@ export default {
    STYLES MOBILE (Téléphone) - Par défaut
    ========================================= */
 
-/* 1. Conteneur principal limité à la largeur de l'écran */
 .product-detail-layout {
     display: flex;
     flex-direction: column;
@@ -213,7 +215,6 @@ export default {
     min-height: 100vh;
 }
 
-/* 2. Conteneur des images limité à 100% */
 .pic-detail-layout {
     display: flex;
     flex-direction: column;
@@ -222,13 +223,29 @@ export default {
     padding: 0.2rem;
 }
 
-.main-pic img {
+.main-pic {
     width: 100%;
-    height: auto;
-    object-fit: cover;
+    display: block; /* S'assure que le conteneur existe bien */
 }
 
-.product-detail{
+.main-pic img {
+    width: 100%;
+    max-width: 100%; /* Empêche l'image de déborder */
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block; /* Enlève les marges invisibles sous l'image */
+}
+
+/* Nouveau conteneur pour la colonne de droite */
+.info-detail-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 1.5rem; /* Espace entre les textes, les tailles et les couleurs */
+}
+
+.product-detail {
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -240,39 +257,34 @@ export default {
     font-weight: 500;
 }
 
-/* 3. LE POINT CLÉ MOBILE : Les miniatures côte à côte et scrollables */
 .cards-layout {
     display: flex;
-    flex-direction: row; /* Aligne les images horizontalement */
-    overflow-x: auto; /* Active le défilement horizontal */
+    flex-direction: row; 
+    overflow-x: auto; 
     width: 100%;
-    gap: 12px; /* Espace entre les images */
+    gap: 12px; 
     padding: 5px;
-    
-    /* Masque la barre de défilement par défaut du navigateur 
-       pour laisser ta barre personnalisée (custom-scrollbar) faire le travail */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
-}
-.cards-layout::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera */
+    scrollbar-width: none; 
+    -ms-overflow-style: none; 
 }
 
-/* 4. On force les miniatures à garder leur taille */
+.cards-layout::-webkit-scrollbar {
+    display: none; 
+}
+
 .second-pic {
-    flex-shrink: 0; /* Empêche les images de s'écraser les unes sur les autres */
-    width: 45%; /* Largeur de tes miniatures sur mobile */
-    height: 220px; /* Hauteur de tes miniatures (à ajuster selon tes photos) */
+    flex-shrink: 0; 
+    width: 45%; 
+    height: 220px; 
 }
 
 .second-pic img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 8px; /* Un petit bord arrondi chic pour Amora création */
+    border-radius: 8px; 
 }
 
-/* Styles pour ta barre de défilement personnalisée sur mobile */
 .custom-scrollbar-container {
     width: 100%;
     height: 6px;
@@ -291,7 +303,7 @@ export default {
 
 .scrollbar-thumb {
     height: 100%;
-    background-color: #333; /* Couleur de la barre de progression */
+    background-color: #333; 
     border-radius: 4px;
     position: absolute;
     top: 0;
@@ -304,7 +316,7 @@ export default {
     margin: 0;
 }
 
-.buy-section{
+.buy-section {
     width: 100%;
     display: flex;
     justify-content: start;
@@ -316,24 +328,35 @@ export default {
    STYLES DESKTOP / LAPTOP (Écrans larges)
    ========================================= */
 @media (min-width: 768px) {
-    /* ... Ton code existant pour le desktop reste ici sans changement ... */
     .product-detail-layout {
-        flex-direction: row;
-        align-items: flex-start;
+        flex-direction: row; /* Aligne la colonne image et la colonne info côte à côte */
+        align-items: center;
+        justify-content: space-around;
         max-width: 1200px;
         margin: 0 auto;
-        padding: 2rem;
+        padding-top: 4rem;
+        gap: 2rem; /* Espacement aéré entre l'image et les infos */
     }
 
     .pic-detail-layout {
-        flex-direction: row-reverse; 
+        flex-direction: row; 
         align-items: flex-start;
-        width: 50%;
+        width: 50%; /* La colonne image prend 50% */
+        gap: 1rem; /* Espace entre l'image principale et les miniatures */
+        padding: 0;
     }
 
     .main-pic {
         flex: 1;
+        width: 100%;
+        min-width: 300px; /* Force Flexbox à ne JAMAIS écraser l'image en dessous de 300px */
         margin-bottom: 0;
+    }
+
+    /* Le nouveau conteneur prend l'autre moitié de l'écran */
+    .info-detail-layout {
+        width: 50%;
+        padding-top: 0; /* Aligne avec le haut de l'image */
     }
 
     .cards-layout {
@@ -341,13 +364,14 @@ export default {
         overflow-y: auto; 
         overflow-x: hidden;
         height: 100%;
-        max-height: 500px; 
+        max-height: 600px; /* Limite la hauteur de la colonne de miniatures */
         padding: 0;
         gap: 1rem;
     }
 
     .second-pic {
         width: 100px; 
+        height: 140px; /* Ajuste la hauteur des miniatures sur ordinateur */
         margin-bottom: 0;
     }
 
@@ -355,9 +379,10 @@ export default {
         display: none;
     }
 
+    /* Réinitialise les padding inutiles puisque le parent info-detail-layout gère l'espacement */
     .product-detail {
-        width: 50%;
-        padding-left: 2rem;
+        width: 100%;
+        padding: 0; 
     }
 }
 </style>

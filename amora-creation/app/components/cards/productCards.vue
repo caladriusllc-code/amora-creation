@@ -1,6 +1,6 @@
 <template>
     <div class="pro-card">
-        <div class="image-wrapper">
+        <div class="image-wrapper" @click="$emit('goToProductDetail')">
           <span v-if="sale" class="sale-badge">Sale</span>
           <img :src="image" :alt="name" class="product-image" />
         </div>
@@ -9,7 +9,7 @@
                 <h3 class="product-name">{{ name }}</h3>
                 <p class="product-price">{{ formatPrice(price) }}</p>
             </div>
-            <cart-button />
+            <cart-button @click="$emit('addToCart')"/>
         </div>
       </div>
 </template>
@@ -27,6 +27,7 @@ export default {
         price: Number,
         sale: Boolean,
     },
+    emits: ['addToCart', 'goToProductDetail'],
     setup(props) {
         const formatPrice = (amount) => {
           return new Intl.NumberFormat('fr-FR', { 
