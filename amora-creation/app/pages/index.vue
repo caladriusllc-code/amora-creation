@@ -3,7 +3,6 @@
     <Mainheader/>
     <main>
       <heroSection />
-      <collectionSection />
       <productsCategory title="Catégories de produits"/>
       <productGrid 
         title="Nos produits les plus demandés"

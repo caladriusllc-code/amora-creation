@@ -8,7 +8,10 @@
             </div>
         </div>
 
-        <product-grid />
+        <productGrid
+            v-if="featuredCollection" 
+            :collection-id="featuredCollection.id" 
+        />
     </section>
 </template>
 
@@ -16,11 +19,13 @@
 import { computed, onMounted } from 'vue'
 import goToButton from '../buttons/goToButton.vue'
 import { useProductStore } from '../../stores/productStore'
+import productGrid from './productGrid.vue';
 
 export default {
     name: 'HeroSection',
     components: {
-        goToButton
+        goToButton,
+        productGrid
     },
 
     setup(){
@@ -39,9 +44,20 @@ export default {
         })
 
         const backgroundImage = computed(() => {
+            // ✨ 1. Si on a uploadé une image dans Django, on l'utilise !
+            if (featuredCollection.value?.image) {
+                // Selon ta configuration Django, l'URL peut être relative. 
+                // Si l'image ne s'affiche pas, dé-commente la ligne du dessous à la place :
+                // return `http://127.0.0.1:8000${featuredCollection.value.image}`
+                return featuredCollection.value.image
+            }
+
+            // ✨ 2. Plan B : Si la collection n'a pas d'image, on utilise Unsplash avec le slug
             if (featuredCollection.value?.slug) {
                 return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(featuredCollection.value.slug)}&w=1170&q=80`
             }
+            
+            // ✨ 3. Plan C : Image par défaut ultime
             return 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
         })
 
@@ -59,6 +75,7 @@ export default {
         })
 
         return{
+            featuredCollection, // ✨ AJOUT ICI : Il faut l'exporter pour l'utiliser dans le template
             title,
             subtitle,
             backgroundImage,

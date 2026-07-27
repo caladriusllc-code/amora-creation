@@ -15,7 +15,7 @@
 
     <div v-else class="collections-grid">
       <article v-for="collection in productStore.collections" :key="collection.id" class="collection-card">
-        <div class="collection-image" :style="{ backgroundImage: `url(${placeholderImage(collection.slug)})` }" />
+        <div class="collection-image" :style="{ backgroundImage: `url(${getCollectionImage(collection)})` }" />
         <div class="collection-content">
           <h3>{{ collection.name }}</h3>
           <p>{{ collection.description || 'Collection saisonnière à découvrir.' }}</p>
@@ -37,9 +37,24 @@ onMounted(async () => {
   }
 })
 
+// On garde ta fonction placeholder comme solution de secours (fallback)
 const placeholderImage = (slug: string) => {
   const encoded = encodeURIComponent(slug || 'collection')
   return `https://images.unsplash.com/featured/?fashion,${encoded}&w=900&q=80`
+}
+
+// ✨ Nouvelle fonction pour gérer l'affichage de l'image ✨
+const getCollectionImage = (collection: any) => {
+  // Si le backend Django a renvoyé une image (collection.image n'est pas null)
+  if (collection.image) {
+    // Si Django renvoie une URL relative (ex: "/media/collections/mon_image.jpg")
+    // et que ton frontend n'est pas sur le même port, tu devras peut-être concaténer 
+    // l'URL de base de ton backend. Ex: return `http://localhost:8000${collection.image}`
+    return collection.image;
+  }
+  
+  // Si aucune image n'a été ajoutée dans l'admin Django, on affiche le placeholder
+  return placeholderImage(collection.slug);
 }
 </script>
 

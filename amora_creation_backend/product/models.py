@@ -30,6 +30,12 @@ class Collection(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nom de la collection")
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField(blank=True, verbose_name="Description")
+    image = models.ImageField(
+        upload_to='collections/',  # Les images seront stockées dans media/collections/
+        blank=True,                 # L'image est optionnelle dans les formulaires
+        null=True,                  # L'image est optionnelle dans la base de données
+        verbose_name="Image de couverture"
+    )
     is_active = models.BooleanField(default=True, verbose_name="Collection active")
     is_featured = models.BooleanField(default=False, verbose_name="Collection à la une")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")

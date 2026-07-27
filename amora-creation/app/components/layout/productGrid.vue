@@ -50,11 +50,13 @@ import { useProductStore } from '../../stores/productStore';
 interface Props {
   title?: string;
   subtitle?: string;
+  collectionId?: number | string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: "Produits de la collection",
   subtitle: "Découvrez tous les produits de la collection",
+  collectionId: undefined,
 });
 
 // 🛠️ 2. On initialise le store et le router
@@ -62,9 +64,23 @@ const productStore = useProductStore();
 const router = useRouter();
 
 // 🛠️ 3. On formate les données de Django pour qu'elles collent parfaitement à ton design
+// 🛠️ 3. On filtre et on formate les données de Django
 const formattedProducts = computed(() => {
-  return productStore.products.map(p => {
-    // On cherche l'image principale, sinon on prend la première, sinon une image par défaut
+  
+  // ✨ ÉTAPE A : On filtre les produits si un collectionId a été passé
+  let productsToShow = productStore.products;
+  
+  if (props.collectionId) {
+    productsToShow = productsToShow.filter(p => {
+      // Selon comment ton backend Django envoie la donnée, 
+      // p.collection peut être directement un ID (ex: 2) ou un objet (ex: { id: 2, name: '...' })
+      const productCollectionId = p.collection?.id || p.collection;
+      return productCollectionId === props.collectionId;
+    });
+  }
+
+  // ✨ ÉTAPE B : On formate les produits filtrés (ton code précédent intact)
+  return productsToShow.map(p => {
     let imageUrl = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
     if (p.images && p.images.length > 0) {
       const mainImg = p.images.find(img => img.is_main);
@@ -73,12 +89,10 @@ const formattedProducts = computed(() => {
 
     return {
       id: p.id,
-      slug: p.slug, // On garde le slug pour l'URL de détail
+      slug: p.slug,
       name: p.name,
-      // Si on a un prix promo, on l'affiche, sinon le prix normal
       price: p.discount_price ? parseFloat(p.discount_price) : parseFloat(p.price),
       image: imageUrl,
-      // S'il y a un prix promo, sale devient 'true'
       sale: p.discount_price !== null && p.discount_price !== undefined
     }
   });

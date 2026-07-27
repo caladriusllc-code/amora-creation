@@ -37,8 +37,16 @@ export default {
           }).format(amount || 0);
         };
 
+        console.log('ProductCards - Image prop reçue:', props.image);
+
+        const handleImageError = (e) => {
+            console.error('Erreur chargement image:', props.image, e);
+            e.target.src = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
+        };
+
         return {
-          formatPrice
+          formatPrice,
+          handleImageError
         };
     }
 }
