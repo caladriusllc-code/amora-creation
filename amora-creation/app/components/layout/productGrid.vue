@@ -5,20 +5,28 @@
       <p class="section-subtitle">{{ subtitle }}</p>
     </div>
     
-    <div class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
+    <div v-if="productStore.isLoading" class="loading-state">
+      <p>Chargement des collections Amora...</p>
+    </div>
+
+    <div v-else-if="productStore.error" class="error-state">
+      <p>{{ productStore.error }}</p>
+    </div>
+
+    <div v-else class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
       <ProductCards
-        v-for="product in products"
+        v-for="product in formattedProducts"
         :key="product.id"
         :image="product.image"
         :name="product.name"
         :price="product.price"
         :sale="product.sale"
         @addToCart="addToCart(product.id)"
-        @goToProductDetail="goToProductDetail(product.id)"
+        @goToProductDetail="goToProductDetail(product.slug)"
       />
     </div>
 
-    <div v-show="showScrollbar" class="custom-scrollbar-container">
+    <div v-show="showScrollbar && !productStore.isLoading" class="custom-scrollbar-container">
       <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
         <div 
           class="scrollbar-thumb" 
@@ -32,73 +40,60 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-// Attention ici : J'ai mis un "P" majuscule à ProductCards.vue pour éviter l'erreur Vetur !
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import ProductCards from '../cards/ProductCards.vue'; 
 import { useRouter } from 'vue-router';
+// 🛠️ 1. On importe ton Store Pinia
+import { useProductStore } from '../../stores/productStore';
 
-
-// Typage strict des données
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  sale: boolean;
-}
-
-// Définition des props avec TypeScript et valeurs par défaut
+// Définition des props (On enlève 'products' car c'est le store qui gère ça maintenant)
 interface Props {
   title?: string;
   subtitle?: string;
-  products?: Product[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: "Produits de la collection",
   subtitle: "Découvrez tous les produits de la collection",
-  products: () => [
-    { 
-      id: 1, 
-      name: 'Robe d\'Automne', 
-      price: 35000, 
-      image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80', 
-      sale: false 
-    },
-    { 
-      id: 2, 
-      name: 'Chemise Grise', 
-      price: 25000, 
-      image: 'https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=600&q=80', 
-      sale: false 
-    },
-    { 
-      id: 3, 
-      name: 'Manteau en Cuir', 
-      price: 65000, 
-      image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&q=80', 
-      sale: true 
-    },
-    { 
-      id: 4, 
-      name: 'Foulard en Soie', 
-      price: 15000, 
-      image: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=600&q=80', 
-      sale: false 
-    }
-  ]
 });
 
-// Refs for scroll elements
+// 🛠️ 2. On initialise le store et le router
+const productStore = useProductStore();
+const router = useRouter();
+
+// 🛠️ 3. On formate les données de Django pour qu'elles collent parfaitement à ton design
+const formattedProducts = computed(() => {
+  return productStore.products.map(p => {
+    // On cherche l'image principale, sinon on prend la première, sinon une image par défaut
+    let imageUrl = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
+    if (p.images && p.images.length > 0) {
+      const mainImg = p.images.find(img => img.is_main);
+      imageUrl = mainImg ? mainImg.image : p.images[0].image;
+    }
+
+    return {
+      id: p.id,
+      slug: p.slug, // On garde le slug pour l'URL de détail
+      name: p.name,
+      // Si on a un prix promo, on l'affiche, sinon le prix normal
+      price: p.discount_price ? parseFloat(p.discount_price) : parseFloat(p.price),
+      image: imageUrl,
+      // S'il y a un prix promo, sale devient 'true'
+      sale: p.discount_price !== null && p.discount_price !== undefined
+    }
+  });
+});
+
+// ------------------------------------------------------------------
+// LOGIQUE DE LA SCROLLBAR (inchangée)
+// ------------------------------------------------------------------
 const cardsContainer = ref<HTMLElement | null>(null);
 const trackRef = ref<HTMLElement | null>(null);
 
-// Scrollbar state
 const thumbWidth = ref(0);
 const thumbLeft = ref(0);
 const showScrollbar = ref(false);
 
-// Update scrollbar dimensions and positioning
 const updateScrollbar = () => {
   const container = cardsContainer.value;
   if (!container) return;
@@ -113,7 +108,7 @@ const updateScrollbar = () => {
   showScrollbar.value = true;
   
   const visibleRatio = clientWidth / scrollWidth;
-  const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100)); // Clamp between 10% and 100%
+  const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100)); 
   thumbWidth.value = calculatedWidth;
   
   const maxScrollLeft = scrollWidth - clientWidth;
@@ -121,7 +116,6 @@ const updateScrollbar = () => {
   thumbLeft.value = progress * (100 - calculatedWidth);
 };
 
-// Track click handler
 const handleTrackClick = (e: MouseEvent) => {
   const track = trackRef.value;
   const container = cardsContainer.value;
@@ -141,7 +135,6 @@ const handleTrackClick = (e: MouseEvent) => {
   });
 };
 
-// Drag-and-drop thumb handlers
 let isDragging = false;
 let startX = 0;
 let startScrollLeft = 0;
@@ -187,26 +180,29 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
   window.addEventListener('touchend', stopDrag);
 };
 
+// ------------------------------------------------------------------
+// ACTIONS PRODUITS
+// ------------------------------------------------------------------
+
+function addToCart(id: string | number) {
+  console.log(`Produit ${id} ajouté au panier!`);
+  // Plus tard, tu pourras appeler ton cartStore ici
+}
+
+function goToProductDetail(slug: string) {
+  // On utilise le slug généré par Django pour faire une belle URL SEO-friendly !
+  router.push(`/product/${slug}`);
+  console.log(`Allons à la page de detail du produit: ${slug}`);
+}
+
 // Lifecycle hooks
 let resizeObserver: ResizeObserver | null = null;
 
-// About products settings
-const router = useRouter();
+onMounted(async () => {
+  // 🛠️ 4. On demande au store d'aller chercher les produits sur Django
+  await productStore.fetchProducts();
 
-function addToCart(id:string){
-
-  console.log("Produit ajouté au panier!");
-
-}
-
-function goToProductDetail(id:string){
-
-  router.push('/product-detail');
-  console.log("Allons à la page de detail");
-
-}
-
-onMounted(() => {
+  // On met à jour la scrollbar une fois les données chargées
   updateScrollbar();
   window.addEventListener('resize', updateScrollbar);
   

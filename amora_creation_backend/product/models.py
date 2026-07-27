@@ -31,6 +31,8 @@ class Collection(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField(blank=True, verbose_name="Description")
     is_active = models.BooleanField(default=True, verbose_name="Collection active")
+    is_featured = models.BooleanField(default=False, verbose_name="Collection à la une")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
 
     class Meta:
         verbose_name = "Collection"

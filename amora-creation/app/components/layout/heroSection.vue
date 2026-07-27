@@ -13,77 +13,57 @@
 </template>
 
 <script>
-import goToButton from '../buttons/goToButton.vue';
-import productCards from '../cards/productCards.vue';
-import scrollBar from '../tools/scrollBar.vue';
-import productGrid from '../layout/productGrid.vue'
+import { computed, onMounted } from 'vue'
+import goToButton from '../buttons/goToButton.vue'
+import { useProductStore } from '../../stores/productStore'
 
 export default {
     name: 'HeroSection',
-    props:{
-        title:{
-            type: String,
-            default: "Nouvelle collection"
-        },
-        subtitle:{
-            type: String,
-            default: "Découvrez nos dernières créations"
-        },
-        // Ajout de la troisième prop pour l'image
-        backgroundImage:{
-            type: String,
-            default: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-        },
-    },
     components: {
-        goToButton,
-        scrollBar,
-        productCards,
-        productGrid
+        goToButton
     },
 
     setup(){
+        const productStore = useProductStore()
 
-        const products = [
-            { 
-                id: 1, 
-                name: "Robe d'été Élégance", 
-                price:120, 
-                image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80" 
-            },
-            { 
-                id: 2, 
-                name: "Veste en Lin Classique", 
-                price:150, 
-                image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80" 
-            },
-            { 
-                id: 3, 
-                name: "Chemisier Soie Douce", 
-                price:85, 
-                image: "https://images.unsplash.com/photo-1551163943-3f6a855d1153?w=600&q=80" 
-            },
-            { 
-                id: 4, 
-                name: "Pantalon Taille Haute", 
-                price:95, 
-                image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&q=80" 
+        const featuredCollection = computed(() => {
+            return productStore.collections.find((collection) => collection.is_featured) || productStore.collections[0] || null
+        })
+
+        const title = computed(() => {
+            return featuredCollection.value?.name || 'Nouvelle collection'
+        })
+
+        const subtitle = computed(() => {
+            return featuredCollection.value?.description || 'Découvrez nos dernières créations'
+        })
+
+        const backgroundImage = computed(() => {
+            if (featuredCollection.value?.slug) {
+                return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(featuredCollection.value.slug)}&w=1170&q=80`
             }
-        ]
+            return 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+        })
 
         const scrollToGrid = ()=> {
-            const element = document.getElementById("grid-products");
-
+            const element = document.getElementById("grid-products")
             if(element){
                 element.scrollIntoView({behavior: 'smooth'})
             }
         }
 
+        onMounted(async () => {
+            if (!productStore.collections.length) {
+                await productStore.fetchCollections()
+            }
+        })
+
         return{
-            products,
+            title,
+            subtitle,
+            backgroundImage,
             scrollToGrid
         }
-
     },
 }
 </script>

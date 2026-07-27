@@ -9,7 +9,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ['id', 'name', 'slug', 'description', 'is_active']
+        fields = ['id', 'name', 'slug', 'description', 'is_active', 'is_featured', 'created_at']
 
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:

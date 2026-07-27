@@ -24,7 +24,7 @@ class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint pour récupérer les collections actives.
     """
-    queryset = Collection.objects.filter(is_active=True)
+    queryset = Collection.objects.filter(is_active=True).order_by('-is_featured', '-created_at')
     serializer_class = CollectionSerializer
 
 
