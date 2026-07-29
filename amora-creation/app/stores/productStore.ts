@@ -2,6 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useNuxtApp } from '#app'
 
+export interface Category {
+  id?: number,
+  name: string,
+  slug: string,
+  description?: string,
+  image?: string
+}
+
 export const useProductStore = defineStore('product', () => {
   // 1. Récupérer ton instance API personnalisée
   const { $api } = useNuxtApp()
@@ -11,12 +19,14 @@ export const useProductStore = defineStore('product', () => {
   // ==========================
   const products = ref([])
   const currentProduct = ref(null)
-  const categories = ref([])
+  const categories = ref<Category[]>([])
   const collections = ref([])
   
   // États de l'interface utilisateur
   const isLoading = ref(false)
   const error = ref(null)
+  const categoriesLoading = ref(false)
+  const categoriesError = ref(null)
   const collectionsLoading = ref(false)
   const collectionsError = ref(null)
 
@@ -60,11 +70,16 @@ export const useProductStore = defineStore('product', () => {
 
   // Récupérer les catégories (pour ton menu ou tes filtres)
   const fetchCategories = async () => {
+    categoriesLoading.value = true
+    categoriesError.value = null
     try {
       const response = await $api('/product/categories/')
       categories.value = response.results ? response.results : response
     } catch (err) {
+      categoriesError.value = "Impossible de charger les catégories."
       console.error("Erreur fetchCategories:", err)
+    } finally {
+      categoriesLoading.value = false
     }
   }
 
@@ -103,6 +118,8 @@ export const useProductStore = defineStore('product', () => {
     collections,
     isLoading,
     error,
+    categoriesLoading,
+    categoriesError,
     collectionsLoading,
     collectionsError,
     // Actions

@@ -5,12 +5,20 @@
       <p class="section-subtitle">Découvrez toutes nos catégories de vêtements</p>
     </div>
     
-    <div class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
+    <div v-if="productStore.categoriesLoading" class="loading-state">
+      <p>Chargement des catégories...</p>
+    </div>
+
+    <div v-else-if="productStore.categoriesError" class="error-state">
+      <p>{{ productStore.categoriesError }}</p>
+    </div>
+
+    <div v-else class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
       <productsCategory
-        v-for="product in products"
-        :key="product.id"
-        :image="product.image"
-        :title="product.name"
+        v-for="category in productStore.categories"
+        :key="category.id || category.slug"
+        :image="getCategoryImage(category)"
+        :title="category.name"
       />
     </div>
 
@@ -29,68 +37,16 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { useProductStore } from '../../stores/productStore';
 import productsCategory from '../cards/categoryCards.vue'
-
-// Typage strict des données pour l'API
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
-  sale: boolean;
-}
 
 export default {
   components:{
     productsCategory,
   },
   setup() {
-    const products = ref<Product[]>([
-      { 
-        id: 1, 
-        name: 'Robe de soirée', 
-        price: 35000, 
-        image: 'https://images.unsplash.com/photo-1612336307429-8a898d10e223?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-        sale: false 
-      },
-      { 
-        id: 2, 
-        name: 'Robe décontractée', 
-        price: 25000, 
-        image: 'https://images.unsplash.com/photo-1631234764568-996fab371596?q=80&w=3087&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-        sale: false 
-      },
-      { 
-        id: 3, 
-        name: 'Ensemble tailleur', 
-        price: 65000, 
-        image: 'https://images.unsplash.com/photo-1715408153725-186c6c77fb45?q=80&w=1065&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-        sale: true 
-      },
-      { 
-        id: 4, 
-        name: 'Jean', 
-        price: 15000, 
-        image: 'https://images.unsplash.com/photo-1714729382668-7bc3bb261662?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-        sale: false,
-      },
-      { 
-        id: 5, 
-        name: 'T-shirt', 
-        price: 15000, 
-        image: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=2112&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-        sale: false,
-      },
-    ]);
-
-    const formatPrice = (amount: number): string => {
-      return new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'XOF',
-        maximumFractionDigits: 0
-      }).format(amount);
-    };
+    const productStore = useProductStore()
 
     // Refs for scroll elements
     const cardsContainer = ref<HTMLElement | null>(null);
@@ -214,7 +170,9 @@ export default {
     // Lifecycle hooks
     let resizeObserver: ResizeObserver | null = null;
     
-    onMounted(() => {
+    onMounted(async () => {
+      await productStore.fetchCategories()
+      await nextTick()
       updateScrollbar();
       window.addEventListener('resize', updateScrollbar);
       
@@ -232,9 +190,18 @@ export default {
       stopDrag();
     });
 
+    const getCategoryImage = (category: any) => {
+      if (category.image) {
+        return category.image
+      }
+      if (category.slug) {
+        return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(category.slug)}&w=900&q=80`
+      }
+      return 'https://images.unsplash.com/featured/?fashion&w=900&q=80'
+    }
+
     return { 
-      products,
-      formatPrice,
+      productStore,
       cardsContainer,
       trackRef,
       thumbWidth,
@@ -244,7 +211,8 @@ export default {
       scrollPrev,
       scrollNext,
       handleTrackClick,
-      startDrag
+      startDrag,
+      getCategoryImage
     };
   }
 }

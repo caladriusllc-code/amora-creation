@@ -10,6 +10,13 @@ class Category(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField(blank=True, verbose_name="Description")
 
+    image = models.ImageField(
+        upload_to='category/',  # Les images seront stockées dans media/collections/
+        blank=True,                 # L'image est optionnelle dans les formulaires
+        null=True,                  # L'image est optionnelle dans la base de données
+        verbose_name="Image de couverture"
+    )
+
     class Meta:
         verbose_name = "Catégorie"
         verbose_name_plural = "Catégories"
