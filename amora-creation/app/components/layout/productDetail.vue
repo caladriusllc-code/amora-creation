@@ -1,29 +1,18 @@
 <template>
-    <div class="product-detail-layout">
+    <div v-if="product" class="product-detail-layout">
         
         <div class="pic-detail-layout">
             <article class="main-pic">
-                <img 
-                    src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt=""
-                >
+                <img :src="mainImage" :alt="product.name">
             </article>
             
-            <div ref="cardsContainer" class="cards-layout">
-                <article class="second-pic">
-                    <img src="../../assets/fashion/BCO.9a51f253-80c6-4638-b350-1cdce66a38ef.png" alt="">
-                </article>
-                <article class="second-pic">
-                    <img src="../../assets/fashion/BCO.552ee5f9-0533-44b6-b203-54968fcd8218.png" alt="">
-                </article>
-                <article class="second-pic">
-                    <img src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt="">
-                </article>
-                <article class="second-pic">
-                    <img src="../../assets/fashion/BCO.04e39cd1-7c12-4a5e-81ee-5dfdfb1782a1.png" alt="">
+            <div ref="cardsContainer" class="cards-layout" v-if="secondaryImages.length > 0">
+                <article v-for="img in secondaryImages" :key="img.id" class="second-pic">
+                    <img :src="img.image" :alt="product.name">
                 </article>
             </div>
 
-            <div v-show="showScrollbar" class="custom-scrollbar-container">
+            <div v-show="showScrollbar && secondaryImages.length > 0" class="custom-scrollbar-container">
                 <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
                     <div 
                     class="scrollbar-thumb" 
@@ -37,28 +26,33 @@
 
         <div class="info-detail-layout">
             <div class="product-detail">
-                <h2 class="product-name">Robe d'été Élégance</h2>
-                <p class="product-description">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. 
-                    Quisquam, quod. Lorem ipsum dolor sit amet consectetur adipisicing elit. 
-                    Quisquam, quod.
-                </p>
+                <h2 class="product-name">{{ product.name }}</h2>
+                <p class="product-description">{{ product.description }}</p>
+                
                 <div class="buy-section">
-                    <p class="product-price">12 000 FCFA</p>
+                    <p class="product-price">
+                        {{ product.discount_price ? product.discount_price : product.price }} FCFA
+                    </p>
                 </div>
                 <shopButton @click="$emit('addToCart')"/>
             </div>
 
             <productSizes/>
-
             <productColors/>
         </div>
         
     </div>
+
+    <div v-else class="loading-state">
+        <p>Chargement des détails du produit...</p>
+    </div>
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router'; // ✨ Pour lire l'URL
+import { useProductStore } from '../../stores/productStore'; // ✨ Ton store
+
 import productGrid from '../layout/productGrid.vue';
 import productCategory from '../layout/productsCategory.vue'
 import cartButton from '../buttons/cartButton.vue'
@@ -77,129 +71,137 @@ export default {
     },
     emits: ['addToCart'],
     setup() {
-        // Refs pour le scrolling
+        const route = useRoute();
+        const productStore = useProductStore();
+
+        // ✨ 1. Trouver le produit grâce au SLUG dans l'URL
+        const product = computed(() => {
+            const slug = route.params.slug; // Récupère "robe-d-ete" depuis /product/robe-d-ete
+            return productStore.products.find(p => p.slug === slug);
+        });
+
+        // ✨ 2. Extraire l'image principale
+        const mainImage = computed(() => {
+            if (!product.value?.images?.length) return 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
+            const main = product.value.images.find(img => img.is_main);
+            return main ? main.image : product.value.images[0].image;
+        });
+
+        // ✨ 3. Extraire les autres images pour les miniatures
+        const secondaryImages = computed(() => {
+            if (!product.value?.images?.length) return [];
+            return product.value.images.filter(img => !img.is_main);
+        });
+
+        // --- Refs pour le scrolling (inchangé) ---
         const cardsContainer = ref<HTMLElement | null>(null);
         const trackRef = ref<HTMLElement | null>(null);
-
-        // Scrollbar state
         const thumbWidth = ref(0);
         const thumbLeft = ref(0);
         const showScrollbar = ref(false);
-
-        // État pour le drag
         let isDragging = false;
         let startX = 0;
         let startScrollLeft = 0;
 
-        // Met à jour la position et la taille du curseur
         const updateScrollbar = () => {
             const container = cardsContainer.value;
             if (!container) return;
-
             const { scrollLeft, scrollWidth, clientWidth } = container;
-
             if (scrollWidth <= clientWidth) {
-            showScrollbar.value = false;
-            return;
+                showScrollbar.value = false;
+                return;
             }
-
             showScrollbar.value = true;
-
             const visibleRatio = clientWidth / scrollWidth;
             const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100));
             thumbWidth.value = calculatedWidth;
-
             const maxScrollLeft = scrollWidth - clientWidth;
             const progress = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
             thumbLeft.value = progress * (100 - calculatedWidth);
         };
 
-        // Démarre le drag du curseur
         const startDrag = (e: MouseEvent | TouchEvent) => {
             e.preventDefault();
             const container = cardsContainer.value;
             if (!container) return;
-
             isDragging = true;
-
             const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
             startX = clientX;
             startScrollLeft = container.scrollLeft;
-
             document.addEventListener('mousemove', onDrag);
             document.addEventListener('mouseup', stopDrag);
             document.addEventListener('touchmove', onDrag, { passive: false });
             document.addEventListener('touchend', stopDrag);
         };
 
-        // Pendant le drag, fait défiler le conteneur
         const onDrag = (e: MouseEvent | TouchEvent) => {
             if (!isDragging) return;
             e.preventDefault();
-
             const container = cardsContainer.value;
             const track = trackRef.value;
             if (!container || !track) return;
-
             const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
             const deltaX = clientX - startX;
-
             const trackWidth = track.offsetWidth;
             const maxScrollLeft = container.scrollWidth - container.clientWidth;
             const ratio = maxScrollLeft / (trackWidth * (1 - thumbWidth.value / 100));
             container.scrollLeft = startScrollLeft + deltaX * ratio;
         };
 
-        // Arrête le drag
         const stopDrag = () => {
             if (!isDragging) return;
             isDragging = false;
-
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', stopDrag);
             document.removeEventListener('touchmove', onDrag);
             document.removeEventListener('touchend', stopDrag);
         };
 
-        // Clic sur la piste
         const handleTrackClick = (e: MouseEvent) => {
             const container = cardsContainer.value;
             const track = trackRef.value;
             if (!container || !track) return;
-
             const rect = track.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const trackWidth = rect.width;
-
             const thumbWidthPx = (thumbWidth.value / 100) * trackWidth;
             const maxScrollLeft = container.scrollWidth - container.clientWidth;
             const targetScroll = ((clickX - thumbWidthPx / 2) / (trackWidth - thumbWidthPx)) * maxScrollLeft;
-
             container.scrollTo({
-            left: Math.max(0, Math.min(targetScroll, maxScrollLeft)),
-            behavior: 'smooth',
+                left: Math.max(0, Math.min(targetScroll, maxScrollLeft)),
+                behavior: 'smooth',
             });
         };
 
-        onMounted(() => {
+        onMounted(async () => {
+            // ✨ 4. S'assurer que les produits sont chargés si l'utilisateur arrive directement sur cette page
+            if (!productStore.products.length) {
+                await productStore.fetchProducts();
+            }
+
             const container = cardsContainer.value;
             if (container) {
-            container.addEventListener('scroll', updateScrollbar);
-            updateScrollbar(); 
+                container.addEventListener('scroll', updateScrollbar);
+                // Petit délai pour laisser le DOM afficher les images avant de calculer la scrollbar
+                setTimeout(() => updateScrollbar(), 100); 
             }
         });
 
         return {
+            product, // On retourne le produit pour le template
+            mainImage, // L'image principale
+            secondaryImages, // Les miniatures
+            
             cardsContainer,
             trackRef,
-            thumbWidth,
+            thumbWidth, 
             thumbLeft,
             showScrollbar,
             startDrag,
             handleTrackClick,
             updateScrollbar,
         };
-        }
+    }
 }
 </script>
 
