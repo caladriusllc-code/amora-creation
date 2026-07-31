@@ -1,13 +1,16 @@
 from django.db import models
 from django.utils import timezone
 from product.models import Product
+import uuid
 
 # Create your models here.
 class Coupon(models.Model):
+
     class DiscountType(models.TextChoices):
         PERCENTAGE = 'percentage', 'Pourcentage (%)'
         FIXED = 'fixed', 'Montant fixe (FCFA)'
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(max_length=50, unique=True, help_text="Ex: BIENTOT_AVOCAT_2026")
     discount_type = models.CharField(max_length=20, choices=DiscountType.choices)
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, help_text="Valeur de la réduction")
@@ -23,7 +26,7 @@ class Coupon(models.Model):
         return self.active and self.valid_from <= now <= self.valid_to and self.used_count < self.max_usages
 
     def __str__(self):
-        return f'{self.full_name} ({self.email})'
+        return f'{self.code}'
 
 class Cart(models.Model):
     """
