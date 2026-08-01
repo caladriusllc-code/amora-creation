@@ -11,36 +11,40 @@
             </div>
 
             <div class="modale-body">
-                <div v-if="cartItems.length === 0" class="empty-cart">
+                <div v-if="isLoading" class="empty-cart">
+                    <p>Chargement de votre panier...</p>
+                </div>
+
+                <div v-else-if="cartItems.length === 0" class="empty-cart">
                     <p>Votre panier est actuellement vide.</p>
                 </div>
                 
                 <div v-else class="cart-items-list">
-                    <div v-for="item in cartItems" :key="item.id" class="cart-item">
+                    <div v-for="item in cartItems" :key="item.product.id" class="cart-item">
                         <div class="item-image-wrapper">
-                            <img :src="item.image" :alt="item.name" class="item-image">
+                            <img :src="getCoverImage(item.product)" :alt="item.product.name" class="item-image">
                         </div>
                         
                         <div class="item-details">
-                            <h5 class="item-name">{{ item.name }}</h5>
-                            <p class="item-variants">Taille: {{ item.size }} | Couleur: {{ item.color }}</p>
+                            <h5 class="item-name">{{ item.product.name }}</h5>
+                            <p class="item-variants">Taille: {{ item.product.size || 'N/A' }} | Couleur: {{ item.product.color || 'N/A' }}</p>
                             
                             <div class="quantity-controls">
-                                <button @click="$emit('decrease', item.id)" class="qty-btn">-</button>
+                                <button @click="decreaseQuantity(item)" class="qty-btn" :disabled="isLoading">-</button>
                                 <span class="qty-number">{{ item.quantity }}</span>
-                                <button @click="$emit('increase', item.id)" class="qty-btn">+</button>
+                                <button @click="increaseQuantity(item)" class="qty-btn" :disabled="isLoading">+</button>
                             </div>
                         </div>
 
                         <div class="item-actions">
-                            <p class="item-price">{{ formatPrice(item.price * item.quantity) }}</p>
-                            <button class="remove-btn" @click="$emit('remove', item.id)">Supprimer</button>
+                            <p class="item-price">{{ formatPrice(item.product.price * item.quantity) }}</p>
+                            <button class="remove-btn" @click="removeItem(item)" :disabled="isLoading">Supprimer</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="modale-footer" v-if="cartItems.length > 0">
+            <div class="modale-footer" v-if="cartItems.length > 0 && !isLoading">
                 <div class="total-section">
                     <span class="total-label">Total :</span>
                     <span class="total-amount">{{ formatPrice(cartTotal) }}</span>
@@ -52,37 +56,112 @@
 </template>
 
 <script lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useCartStore } from '../../stores/cartStore'; // <-- ASSURE-TOI QUE CE CHEMIN EST CORRECT
 
 export default {
     props: {
         isOpen: {
             type: Boolean,
             default: false
-        },
-        // Nouvelle prop pour recevoir les articles du panier
-        cartItems: {
-            type: Array,
-            // Données factices pour tester le visuel (à retirer une fois connecté à tes vraies données)
-            default: () => [
-                { id: 1, name: "Robe d'été Élégance", size: "M", color: "Noir", price: 12000, quantity: 1, image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=200&q=80" },
-                { id: 2, name: "Veste en Jean Amora", size: "L", color: "Bleu", price: 25000, quantity: 2, image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=200&q=80" }
-            ]
         }
     },
+    // On garde les emits : ce sera le composant parent qui appellera les futures actions du store (ajouter, supprimer...)
     emits: ['close', 'increase', 'decrease', 'remove'],
+    
     setup(props) {
-        // Calcule le total du panier automatiquement
+        // 1. Initialisation du store
+        const cartStore = useCartStore();
+
+        // 2. Récupération réactive des données du store
+        const cartItems = computed(() => cartStore.cart?.items || []);
+        
+        // On utilise la propriété "total" de ton interface Cart. Si elle n'existe pas, on fait le calcul de secours.
         const cartTotal = computed(() => {
-            return props.cartItems.reduce((total: any, item: any) => total + (item.price * item.quantity), 0);
+            if (cartStore.cart?.total) {
+                return cartStore.cart.total;
+            }
+            // Secours si le backend n'a pas encore renvoyé le total
+            return cartItems.value.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0);
         });
 
-        // Formate le prix avec "FCFA" et des espaces (ex: 12 000 FCFA)
+        const isLoading = computed(() => cartStore.isLoading);
+
+        // 3. Formateur de prix
         const formatPrice = (price: number) => {
             return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
         };
 
-        return { cartTotal, formatPrice };
+        // 4. Fonction pour récupérer la bonne image du produit ✨
+        const getCoverImage = (product: any) => {
+            let imagePath = '';
+            
+            // 1. On extrait le chemin de l'image
+            if (product.image && typeof product.image === 'string') {
+                imagePath = product.image;
+            } else if (product.images && product.images.length > 0) {
+                imagePath = product.images[0].image || product.images[0].url || product.images[0];
+            }
+
+            // 2. Si on n'a rien trouvé, on met un placeholder
+            if (!imagePath) {
+                return 'https://via.placeholder.com/150?text=Pas+d%27image';
+            }
+
+            // 3. LA CORRECTION : Si l'URL ne commence pas par http (donc c'est un chemin relatif)
+            if (!imagePath.startsWith('http')) {
+                // Si l'URL ne commence pas par un slash, on l'ajoute
+                const prefix = imagePath.startsWith('/') ? '' : '/';
+                
+                // On ajoute l'adresse de ton backend Django (ajuste si tu as configuré un dossier /media/ spécifique)
+                // Note : si ton image est dans le dossier media, l'URL finale devrait ressembler à http://localhost:8000/media/products/...
+                
+                // Si Django ne renvoie pas /media/ dans le JSON, décommente la ligne du bas et commente l'autre :
+                // return `http://localhost:8000/media${prefix}${imagePath}`;
+                
+                return `http://localhost:8000${prefix}${imagePath}`;
+            }
+
+            return imagePath;
+        };
+
+        // 5. On va mettre à jour les quantités diminuer ou augmenter
+        const increaseQuantity = async (item: any) => {
+            // On calcule la nouvelle quantité et on utilise l'ID de l'item (CartItem ID)
+            const newQuantity = item.quantity + 1;
+            await cartStore.updateItemQuantity(item.id, newQuantity);
+        };
+
+        const decreaseQuantity = async (item: any) => {
+            const newQuantity = item.quantity - 1;
+            // Si la quantité tombe à 0, on supprime l'article
+            if (newQuantity > 0) {
+                await cartStore.updateItemQuantity(item.id, newQuantity);
+            } else {
+                await cartStore.removeItem(item.id);
+            }
+        };
+
+        const removeItem = async (item: any) => {
+            await cartStore.removeItem(item.id);
+        };
+
+        onMounted(()=> {
+            // On va déclencher le panier au montage du composant
+            cartStore.fetchCart();
+            console.log("Cart monté et fetché", cartStore.cart)
+        })
+
+        return { 
+            cartItems, 
+            cartTotal, 
+            isLoading, 
+            formatPrice,
+            getCoverImage,
+            increaseQuantity,
+            decreaseQuantity,
+            removeItem
+        };
     }
 }
 </script>

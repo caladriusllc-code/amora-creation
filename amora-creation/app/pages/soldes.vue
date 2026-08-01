@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <Mainheader @toggle-cart="toggleCart"/>
+    <Mainheader/>
     <main>
       <heroSection />
       <productsCategory title="Catégories de produits"/>
@@ -14,21 +14,16 @@
       />
     </main>
     <footerSection/>
-    <cartModale :isOpen="isCartOpen" @close="toggleCart"/>
   </div>
 </template>
 
 <script lang="ts">
-import { ref } from 'vue';
-
-
 import Mainheader from '../components/navigator/header.vue'
 import heroSection from '../components/layout/heroSection.vue';
 import productsCategory from '../components/layout/ProductsCategory.vue'
 import collectionSection from '../components/layout/collectionSection.vue'
 import productGrid from '../components/layout/productGrid.vue';
 import footerSection from '~/components/layout/footerSection.vue';
-import cartModale from '../components/modale/cartModale.vue'
 
 export default {
   components: {
@@ -37,20 +32,7 @@ export default {
     collectionSection,
     productsCategory,
     productGrid,
-    footerSection,
-    cartModale
-  },
-  setup() {
-    const isCartOpen = ref<boolean>(false);
-
-    function toggleCart() {
-      isCartOpen.value = !isCartOpen.value;
-    }
-
-    return {
-      isCartOpen,
-      toggleCart
-    }
+    footerSection
   }
 }
 </script>

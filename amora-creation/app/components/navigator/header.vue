@@ -35,7 +35,7 @@
           </svg>
         </button>
 
-        <cart-button />
+        <cart-button @click="()=>$emit('toggle-cart')"/>
         
         <button class="hamburger" @click="toggleMenu" aria-label="Menu" :class="{ 'is-active': isMenuOpen }">
           <span></span>
@@ -79,6 +79,9 @@ export default {
       default: 'transparent', // Peut être 'transparent', 'light', ou 'dark'
     }
   },
+
+  emits: ['toggle-cart'],
+  
   setup() {
     const router = useRouter();
 

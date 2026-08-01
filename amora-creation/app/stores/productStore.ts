@@ -10,6 +10,16 @@ export interface Category {
   image?: string
 }
 
+export interface Product {
+  id?: number | string,
+  name: string,
+  slug: string,
+  description: string,
+  price: number,
+  image?: string,
+  category?: Category
+}
+
 export const useProductStore = defineStore('product', () => {
   // 1. Récupérer ton instance API personnalisée
   const { $api } = useNuxtApp()

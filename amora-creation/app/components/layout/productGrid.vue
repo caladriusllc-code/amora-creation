@@ -45,6 +45,7 @@ import ProductCards from '../cards/ProductCards.vue';
 import { useRouter } from 'vue-router';
 // 🛠️ 1. On importe ton Store Pinia
 import { useProductStore } from '../../stores/productStore';
+import { useCartStore } from '../../stores/cartStore';
 
 // Définition des props (On enlève 'products' car c'est le store qui gère ça maintenant)
 interface Props {
@@ -61,6 +62,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 🛠️ 2. On initialise le store et le router
 const productStore = useProductStore();
+const cartStore = useCartStore();
 const router = useRouter();
 
 // 🛠️ 3. On formate les données de Django pour qu'elles collent parfaitement à ton design
@@ -198,7 +200,13 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
 // ACTIONS PRODUITS
 // ------------------------------------------------------------------
 
-function addToCart(id: string | number) {
+async function addToCart(id: string | number) {
+
+  try {
+    await cartStore.addToCart(id, 1);
+  } catch (error){
+    console.error("Erreur lors de la récupération du panier:", error);
+  }
   console.log(`Produit ${id} ajouté au panier!`);
   // Plus tard, tu pourras appeler ton cartStore ici
 }

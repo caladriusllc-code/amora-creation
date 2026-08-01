@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <Mainheader/>
+    <Mainheader @toggle-cart="toggleCart"/>
     <main>
       <heroSection />
       <productsCategory title="Catégories de produits"/>
@@ -14,6 +14,10 @@
       />
     </main>
     <footerSection/>
+    <cartModale 
+      :isOpen="isCartOpen"
+      @close="toggleCart"
+    />
   </div>
 </template>
 
@@ -24,6 +28,9 @@ import productsCategory from '../../components/layout/ProductsCategory.vue'
 import collectionSection from '../../components/layout/collectionSection.vue'
 import productGrid from '../../components/layout/productGrid.vue';
 import footerSection from '~/components/layout/footerSection.vue';
+import cartModale from '../../components/modale/cartModale.vue'
+
+import { ref } from 'vue'
 
 export default {
   components: {
@@ -32,7 +39,28 @@ export default {
     collectionSection,
     productsCategory,
     productGrid,
-    footerSection
+    footerSection,
+    cartModale
+  },
+  setup() {
+    // State 
+    const isCartOpen = ref<boolean>(false);
+
+    // Computed properties
+    function toggleCart(){
+      isCartOpen.value = !isCartOpen.value;
+      console.log("Vous avez ouvert la modale")
+    }
+
+    // Actions
+
+    return{
+      // State
+      isCartOpen,
+      // computed properties
+      toggleCart,
+      // Actions 
+    }
   }
 }
 </script>

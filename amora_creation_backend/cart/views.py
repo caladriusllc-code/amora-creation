@@ -1,3 +1,4 @@
+import uuid
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,53 +8,77 @@ from .models import (
     Product, Coupon, 
     Cart, CartItem, GuestInfo
 )
-from product.models import(
+from product.models import (
     Product, Category, Collection,
 )
 from .serializers import *
 
 class CartViewSet(viewsets.ViewSet):
     """
-    Gestion du panier par session_key pour le frontend Nuxt.js.
+    Gestion du panier par Cookies pour le frontend Nuxt.js.
     """
 
-    def _get_or_create_cart(self, session_key):
-        if not session_key:
-            return None, False
-        cart, created = Cart.objects.get_or_create(session_key=session_key)
-        return cart, created
+    def _get_or_create_cart(self, request):
+        """
+        Récupère le panier via le cookie. S'il n'y a pas de cookie, 
+        génère un nouvel ID et crée un panier.
+        Retourne le panier, l'ID de session, et un booléen indiquant si c'est une nouvelle session.
+        """
+        session_id = request.COOKIES.get('session_id')
+        is_new_session = False
+
+        if not session_id:
+            session_id = uuid.uuid4().hex # Génère un identifiant unique (ex: 3b1a...)
+            is_new_session = True
+
+        cart, created = Cart.objects.get_or_create(session_key=session_id)
+        return cart, session_id, is_new_session
+
+    def _set_cookie_if_needed(self, response, session_id, is_new_session):
+        """
+        Attache le cookie à la réponse si c'est une nouvelle session.
+        """
+        if is_new_session:
+            response.set_cookie(
+                key='session_id',
+                value=session_id,
+                max_age=30 * 24 * 60 * 60, # Expire dans 30 jours
+                samesite='Lax', # Essentiel pour la communication Nuxt <-> Django
+                httponly=True,  # Sécurité : Empêche le JavaScript de lire le cookie directement
+                # secure=True,  # TODO: Décommenter en production (quand tu seras en HTTPS)
+            )
+        return response
 
     @action(detail=False, methods=['get'])
     def get_cart(self, request):
-        """Récupère le panier en fonction du header X-Session-Key ou paramètre URL."""
-        session_key = request.query_params.get('session_key') or request.headers.get('X-Session-Key')
-        if not session_key:
-            return Response({'error': 'Une clé de session est requise.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        cart, _ = self._get_or_create_cart(session_key)
+        """Récupère ou crée le panier en fonction du cookie."""
+        cart, session_id, is_new = self._get_or_create_cart(request)
+        
         serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return self._set_cookie_if_needed(response, session_id, is_new)
 
     @action(detail=False, methods=['post'])
     def add_item(self, request):
         """Ajoute un produit au panier."""
-        session_key = request.data.get('session_key')
+        cart, session_id, is_new = self._get_or_create_cart(request)
+        
         product_id = request.data.get('product_id')
         quantity = int(request.data.get('quantity', 1))
 
-        if not session_key or not product_id:
+        if not product_id:
             return Response(
-                {'error': 'Les champs session_key et product_id sont requis.'}, 
+                {'error': 'Le champ product_id est requis.'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        cart, _ = self._get_or_create_cart(session_key)
         product = get_object_or_404(Product, id=product_id)
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             product=product,
-            defaults={'unit_price': product.prix, 'quantity': quantity}
+            defaults={'unit_price': product.price, 'quantity': quantity}
         )
 
         if not created:
@@ -61,44 +86,49 @@ class CartViewSet(viewsets.ViewSet):
             item.save()
 
         serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        return self._set_cookie_if_needed(response, session_id, is_new)
 
     @action(detail=False, methods=['post'])
     def update_item_quantity(self, request):
         """Met à jour la quantité d'un article du panier."""
+        # Plus besoin de demander session_key !
+        cart, session_id, is_new = self._get_or_create_cart(request)
+        
         item_id = request.data.get('item_id')
         quantity = int(request.data.get('quantity', 1))
 
-        item = get_object_or_404(CartItem, id=item_id)
+        # On s'assure que l'item appartient bien au panier actuel par sécurité
+        item = get_object_or_404(CartItem, id=item_id, cart=cart)
+        
         if quantity > 0:
             item.quantity = quantity
             item.save()
         else:
             item.delete()
 
-        serializer = CartSerializer(item.cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = CartSerializer(cart)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        return self._set_cookie_if_needed(response, session_id, is_new)
 
     @action(detail=False, methods=['post'])
     def remove_item(self, request):
         """Supprime un article du panier."""
+        cart, session_id, is_new = self._get_or_create_cart(request)
+        
         item_id = request.data.get('item_id')
-        item = get_object_or_404(CartItem, id=item_id)
-        cart = item.cart
+        item = get_object_or_404(CartItem, id=item_id, cart=cart)
         item.delete()
 
         serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        return self._set_cookie_if_needed(response, session_id, is_new)
 
     @action(detail=False, methods=['post'])
     def apply_coupon(self, request):
         """Applique un code promo au panier."""
-        session_key = request.data.get('session_key')
+        cart, session_id, is_new = self._get_or_create_cart(request)
         code = request.data.get('code')
-
-        cart, _ = self._get_or_create_cart(session_key)
-        if not cart:
-            return Response({'error': 'Panier introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             coupon = Coupon.objects.get(code__iexact=code)
@@ -106,21 +136,9 @@ class CartViewSet(viewsets.ViewSet):
                 cart.coupon = coupon
                 cart.save()
                 serializer = CartSerializer(cart)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                response = Response(serializer.data, status=status.HTTP_200_OK)
+                return self._set_cookie_if_needed(response, session_id, is_new)
             else:
                 return Response({'error': 'Ce code promo est expiré ou invalide.'}, status=status.HTTP_400_BAD_REQUEST)
         except Coupon.DoesNotExist:
             return Response({'error': 'Code promo introuvable.'}, status=status.HTTP_404_NOT_FOUND)
-
-
-# ==========================================
-# 3. VUE CHECKOUT / GUEST INFO
-# ==========================================
-
-class GuestInfoViewSet(viewsets.ModelViewSet):
-    """
-    Enregistre les coordonnées des clients invités lors de la commande.
-    """
-    queryset = GuestInfo.objects.all()
-    serializer_class = GuestInfoSerializer
-    http_method_names = ['post'] # Sécurité : seule la création (POST) est autorisée
