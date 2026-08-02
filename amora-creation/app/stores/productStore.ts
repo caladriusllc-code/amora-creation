@@ -2,43 +2,68 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useNuxtApp } from '#app'
 
+// ==========================
+// 📚 INTERFACES (Typage)
+// ==========================
+
 export interface Category {
-  id?: number,
-  name: string,
-  slug: string,
-  description?: string,
+  id?: number
+  name: string
+  slug: string
+  description?: string
+  image?: string
+}
+
+export interface Collection {
+  id?: number
+  name: string
+  slug: string
+  description?: string
   image?: string
 }
 
 export interface Product {
-  id?: number | string,
-  name: string,
-  slug: string,
-  description: string,
-  price: number,
-  image?: string,
+  id?: number | string
+  name: string
+  slug: string
+  description: string
+  price: number
+  image?: string
   category?: Category
+  is_in_stock?: boolean // Ajouté car utilisé dans ton getter
+}
+
+// Typage générique pour les réponses paginées de Django REST Framework
+export interface PaginatedResponse<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
 }
 
 export const useProductStore = defineStore('product', () => {
-  // 1. Récupérer ton instance API personnalisée
+  // 1. Récupérer l'instance API personnalisée
   const { $api } = useNuxtApp()
 
   // ==========================
   // 📦 STATE (État)
   // ==========================
-  const products = ref([])
-  const currentProduct = ref(null)
-  const categories = ref<Category[]>([])
-  const collections = ref([])
   
-  // États de l'interface utilisateur
-  const isLoading = ref(false)
-  const error = ref(null)
-  const categoriesLoading = ref(false)
-  const categoriesError = ref(null)
-  const collectionsLoading = ref(false)
-  const collectionsError = ref(null)
+  // Données
+  const products = ref<Product[]>([])
+  const currentProduct = ref<Product | null>(null)
+  const categories = ref<Category[]>([])
+  const collections = ref<Collection[]>([])
+  
+  // États de l'interface utilisateur (Chargement)
+  const isLoading = ref<boolean>(false)
+  const categoriesLoading = ref<boolean>(false)
+  const collectionsLoading = ref<boolean>(false)
+
+  // États de l'interface utilisateur (Erreurs)
+  const error = ref<string | null>(null)
+  const categoriesError = ref<string | null>(null)
+  const collectionsError = ref<string | null>(null)
 
   // ==========================
   // ⚙️ ACTIONS (Méthodes)
@@ -49,43 +74,41 @@ export const useProductStore = defineStore('product', () => {
     isLoading.value = true
     error.value = null
     try {
-      // Rappel : dans urls.py tu avais mis path('product/', ...)
-      const response = await $api('/product/products/')
+      // Typage explicite du retour de l'API
+      const response = await $api<PaginatedResponse<Product> | Product[]>('/product/products/')
       
-      // Django REST Framework renvoie souvent { count, next, previous, results: [...] } 
-      // si la pagination est activée. Sinon, c'est directement le tableau.
-      products.value = response.results ? response.results : response
-    } catch (err) {
-      error.value = "Impossible de charger les produits d'Amora création."
+      products.value = 'results' in response ? response.results : response
+    } catch (err: any) {
+      error.value = err?.data?.message || "Impossible de charger les produits d'Amora création."
       console.error("Erreur fetchProducts:", err)
     } finally {
       isLoading.value = false
     }
   }
 
-  // Récupérer un seul produit via son slug (pour la page détail)
-  const fetchProductBySlug = async (slug) => {
+  // Récupérer un seul produit via son slug
+  const fetchProductBySlug = async (slug: string) => {
     isLoading.value = true
     error.value = null
     try {
-      const response = await $api(`/product/products/${slug}/`)
+      const response = await $api<Product>(`/product/products/${slug}/`)
       currentProduct.value = response
-    } catch (err) {
-      error.value = "Ce produit est introuvable."
-      console.error("Erreur fetchProductBySlug:", err)
+    } catch (err: any) {
+      error.value = err?.data?.message || "Ce produit est introuvable."
+      console.error(`Erreur fetchProductBySlug (${slug}):`, err)
     } finally {
       isLoading.value = false
     }
   }
 
-  // Récupérer les catégories (pour ton menu ou tes filtres)
+  // Récupérer les catégories
   const fetchCategories = async () => {
     categoriesLoading.value = true
     categoriesError.value = null
     try {
-      const response = await $api('/product/categories/')
-      categories.value = response.results ? response.results : response
-    } catch (err) {
+      const response = await $api<PaginatedResponse<Category> | Category[]>('/product/categories/')
+      categories.value = 'results' in response ? response.results : response
+    } catch (err: any) {
       categoriesError.value = "Impossible de charger les catégories."
       console.error("Erreur fetchCategories:", err)
     } finally {
@@ -98,9 +121,9 @@ export const useProductStore = defineStore('product', () => {
     collectionsLoading.value = true
     collectionsError.value = null
     try {
-      const response = await $api('/product/collections/')
-      collections.value = response.results ? response.results : response
-    } catch (err) {
+      const response = await $api<PaginatedResponse<Collection> | Collection[]>('/product/collections/')
+      collections.value = 'results' in response ? response.results : response
+    } catch (err: any) {
       collectionsError.value = "Impossible de charger les collections."
       console.error("Erreur fetchCollections:", err)
     } finally {
@@ -112,9 +135,8 @@ export const useProductStore = defineStore('product', () => {
   // 🔍 GETTERS (Propriétés calculées)
   // ==========================
   
-  // Exemple de getter : récupérer les produits en stock uniquement
-  const inStockProducts = computed(() => {
-    return products.value.filter(p => p.is_in_stock)
+  const inStockProducts = computed<Product[]>(() => {
+    return products.value.filter(p => p.is_in_stock === true)
   })
 
   // ==========================
@@ -126,6 +148,7 @@ export const useProductStore = defineStore('product', () => {
     currentProduct,
     categories,
     collections,
+    // Status
     isLoading,
     error,
     categoriesLoading,

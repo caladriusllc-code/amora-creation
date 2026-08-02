@@ -1,7 +1,7 @@
 <template>
-    <button class="cart-button">
+    <button class="cart-button" :disabled="isButtonLoading" :aria-busy="isButtonLoading">
 
-        <template v-if="!isLoading">
+        <template v-if="!isButtonLoading">
             <span>Acheter</span>
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -19,19 +19,18 @@
     </button>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+import { computed } from 'vue';
 
-    name: 'cartButton',
-    props:{
-        isLoading: {
-            type:Boolean, 
-            default:false
-        },
-        
-    }
+const props = withDefaults(defineProps<{
+    isLoading?: boolean;
+    loading?: boolean;
+}>(), {
+    isLoading: false,
+    loading: false,
+});
 
-}
+const isButtonLoading = computed(() => props.isLoading || props.loading);
 </script>
 
 <style scoped>

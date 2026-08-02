@@ -35,7 +35,10 @@
           </svg>
         </button>
 
-        <cart-button @click="()=>$emit('toggle-cart')"/>
+        <cart-button 
+          :badgeCount="cartStore.totalItems"
+          @click="()=>$emit('toggle-cart')"
+        />
         
         <button class="hamburger" @click="toggleMenu" aria-label="Menu" :class="{ 'is-active': isMenuOpen }">
           <span></span>
@@ -67,6 +70,9 @@
 <script lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+
+import { useCartStore } from '../../stores/cartStore'
+
 import cartButton from '../buttons/cartButton.vue';
 import BaseResearchInput from '../input/BaseResarchInput.vue';
 
@@ -83,6 +89,8 @@ export default {
   emits: ['toggle-cart'],
   
   setup() {
+    const cartStore = useCartStore();
+
     const router = useRouter();
 
     const isMenuOpen = ref(false);
@@ -122,6 +130,7 @@ export default {
 
     onMounted(() => {
       window.addEventListener('scroll', handleScroll);
+      cartStore.
     });
 
     onUnmounted(() => {
@@ -129,6 +138,7 @@ export default {
     });
 
     return { 
+      cartStore,
       router,
       isMenuOpen, 
       toggleMenu, 

@@ -33,6 +33,14 @@ export const useCartStore = defineStore('cart', () => {
 
     // State 
     const cart = ref<Cart | null>(null);
+    
+    // Getters
+    const totalItems = computed(()=> {
+        if(cart.value && cart.value.items){
+            return cart.value.items.reduce((acc, item) => acc + item.quantity, 0);
+        }
+        return 0;
+    })
 
     // Actions
     async function fetchCart(){
@@ -119,8 +127,11 @@ export const useCartStore = defineStore('cart', () => {
     }
 
     return{
+        // Sate
         isLoading,
         cart,
+        // Getters
+        totalItems,
         fetchCart,
         addToCart,
         updateItemQuantity,

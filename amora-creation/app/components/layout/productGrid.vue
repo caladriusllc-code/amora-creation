@@ -6,7 +6,7 @@
     </div>
     
     <div v-if="productStore.isLoading" class="loading-state">
-      <p>Chargement des collections Amora...</p>
+      <skeleton />
     </div>
 
     <div v-else-if="productStore.error" class="error-state">
@@ -21,6 +21,7 @@
         :name="product.name"
         :price="product.price"
         :sale="product.sale"
+        :isLoading="loadingProductIds.has(product.id)"
         @addToCart="addToCart(product.id)"
         @goToProductDetail="goToProductDetail(product.slug)"
       />
@@ -42,6 +43,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import ProductCards from '../cards/ProductCards.vue'; 
+import skeleton from '../tools/skeleton.vue'
 import { useRouter } from 'vue-router';
 // 🛠️ 1. On importe ton Store Pinia
 import { useProductStore } from '../../stores/productStore';
@@ -64,6 +66,7 @@ const props = withDefaults(defineProps<Props>(), {
 const productStore = useProductStore();
 const cartStore = useCartStore();
 const router = useRouter();
+const loadingProductIds = ref<Set<string | number>>(new Set());
 
 // 🛠️ 3. On formate les données de Django pour qu'elles collent parfaitement à ton design
 // 🛠️ 3. On filtre et on formate les données de Django
@@ -201,14 +204,21 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
 // ------------------------------------------------------------------
 
 async function addToCart(id: string | number) {
+  const nextLoadingIds = new Set(loadingProductIds.value);
+  nextLoadingIds.add(id);
+  loadingProductIds.value = nextLoadingIds;
 
   try {
     await cartStore.addToCart(id, 1);
   } catch (error){
     console.error("Erreur lors de la récupération du panier:", error);
+  } finally {
+    const nextLoadingIdsAfter = new Set(loadingProductIds.value);
+    nextLoadingIdsAfter.delete(id);
+    loadingProductIds.value = nextLoadingIdsAfter;
   }
+
   console.log(`Produit ${id} ajouté au panier!`);
-  // Plus tard, tu pourras appeler ton cartStore ici
 }
 
 function goToProductDetail(slug: string) {

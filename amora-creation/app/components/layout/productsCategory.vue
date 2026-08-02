@@ -1,29 +1,32 @@
 <template>
   <section class="product-section" id="grid-products">
     <div class="section-header">
-      <h2 class="section-title">Categorie de produits</h2>
+      <h2 class="section-title">Catégories de produits</h2>
       <p class="section-subtitle">Découvrez toutes nos catégories de vêtements</p>
     </div>
     
-    <div v-if="productStore.categoriesLoading" class="loading-state">
-      <p>Chargement des catégories...</p>
-    </div>
+    <Transition name="fade" mode="out-in">
+      <div v-if="isLoading" key="skeleton" class="cards-layout">
+        <Skeleton v-for="n in 6" :key="`sk-${n}`" :show-price="false" />
+      </div>
 
-    <div v-else-if="productStore.categoriesError" class="error-state">
-      <p>{{ productStore.categoriesError }}</p>
-    </div>
+      <div v-else-if="productStore.categoriesError" key="error" class="error-state">
+        <p>{{ productStore.categoriesError }}</p>
+      </div>
 
-    <div v-else class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
-      <productsCategory
-        v-for="category in productStore.categories"
-        :key="category.id || category.slug"
-        :image="getCategoryImage(category)"
-        :title="category.name"
-      />
-    </div>
+      <div v-else key="content" class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
+        <productsCategory
+          v-for="(category, index) in productStore.categories"
+          :key="category.id || category.slug"
+          :image="getCategoryImage(category)"
+          :title="category.name"
+          class="card-reveal"
+          :style="{ animationDelay: `${Math.min(index, 8) * 60}ms` }"
+        />
+      </div>
+    </Transition>
 
-    <!-- Custom Scrollbar -->
-    <div v-show="showScrollbar" class="custom-scrollbar-container">
+    <div v-show="showScrollbar && !isLoading" class="custom-scrollbar-container">
       <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
         <div 
           class="scrollbar-thumb" 
@@ -37,18 +40,30 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useProductStore } from '../../stores/productStore';
 import productsCategory from '../cards/categoryCards.vue'
+import Skeleton from '../tools/skeleton.vue'
 
 export default {
-  components:{
+  name: 'CategoryGrid',
+  components: {
     productsCategory,
+    Skeleton
   },
   setup() {
     const productStore = useProductStore()
 
-    // Refs for scroll elements
+    // 🌟 1. On force le chargement initial à TRUE dès la première milliseconde
+    const isInitializing = ref(true);
+
+    // 🌟 2. On combine le chargement initial avec l'état de l'API
+    const isLoading = computed(() => {
+      // Si on initialise OU si Pinia est en train de chercher = Skeleton affiché !
+      return isInitializing.value || productStore.categoriesLoading;
+    });
+
+    // Refs pour le défilement
     const cardsContainer = ref<HTMLElement | null>(null);
     const trackRef = ref<HTMLElement | null>(null);
     
@@ -56,8 +71,8 @@ export default {
     const thumbWidth = ref(0);
     const thumbLeft = ref(0);
     const showScrollbar = ref(false);
+    let resizeObserver: ResizeObserver | null = null;
 
-    // Update scrollbar dimensions and positioning
     const updateScrollbar = () => {
       const container = cardsContainer.value;
       if (!container) return;
@@ -72,7 +87,7 @@ export default {
       showScrollbar.value = true;
       
       const visibleRatio = clientWidth / scrollWidth;
-      const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100)); // Clamp between 10% and 100%
+      const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100));
       thumbWidth.value = calculatedWidth;
       
       const maxScrollLeft = scrollWidth - clientWidth;
@@ -80,28 +95,36 @@ export default {
       thumbLeft.value = progress * (100 - calculatedWidth);
     };
 
-    // Navigation buttons handlers
+    // Watcher pour initialiser la barre de défilement une fois le skeleton parti
+    watch(isLoading, async (isNowLoading) => {
+      if (!isNowLoading) {
+        await nextTick();
+        updateScrollbar();
+        
+        if (typeof ResizeObserver !== 'undefined' && cardsContainer.value) {
+          if (resizeObserver) resizeObserver.disconnect();
+          resizeObserver = new ResizeObserver(updateScrollbar);
+          resizeObserver.observe(cardsContainer.value);
+        }
+      }
+    });
+
+    // Boutons de navigation
     const scrollPrev = () => {
       const container = cardsContainer.value;
       if (!container) return;
       const scrollAmount = container.clientWidth * 0.75;
-      container.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      });
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
     };
 
     const scrollNext = () => {
       const container = cardsContainer.value;
       if (!container) return;
       const scrollAmount = container.clientWidth * 0.75;
-      container.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      });
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     };
 
-    // Track click handler
+    // Clic sur la track
     const handleTrackClick = (e: MouseEvent) => {
       const track = trackRef.value;
       const container = cardsContainer.value;
@@ -115,13 +138,10 @@ export default {
       let targetScrollLeft = (clickRatio * container.scrollWidth) - (container.clientWidth / 2);
       targetScrollLeft = Math.max(0, Math.min(maxScrollLeft, targetScrollLeft));
       
-      container.scrollTo({
-        left: targetScrollLeft,
-        behavior: 'smooth'
-      });
+      container.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
     };
 
-    // Drag-and-drop thumb handlers
+    // Drag and Drop de la scrollbar
     let isDragging = false;
     let startX = 0;
     let startScrollLeft = 0;
@@ -167,41 +187,36 @@ export default {
       window.addEventListener('touchend', stopDrag);
     };
 
-    // Lifecycle hooks
-    let resizeObserver: ResizeObserver | null = null;
-    
+    // Lifecycle
     onMounted(async () => {
-      await productStore.fetchCategories()
-      await nextTick()
-      updateScrollbar();
       window.addEventListener('resize', updateScrollbar);
       
-      if (typeof ResizeObserver !== 'undefined' && cardsContainer.value) {
-        resizeObserver = new ResizeObserver(updateScrollbar);
-        resizeObserver.observe(cardsContainer.value);
+      // On lance la requête de l'API si le store est vide
+      if (productStore.categories.length === 0) {
+        // ⏱️ Durée minimale d'affichage du squelette pour éviter un flash trop rapide
+        const minDelay = new Promise(resolve => setTimeout(resolve, 300));
+        await Promise.all([productStore.fetchCategories(), minDelay]);
       }
+      
+      // 🌟 3. Une fois que TOUT est terminé, on retire l'état d'initialisation !
+      isInitializing.value = false;
     });
 
     onUnmounted(() => {
       window.removeEventListener('resize', updateScrollbar);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
+      if (resizeObserver) resizeObserver.disconnect();
       stopDrag();
     });
 
     const getCategoryImage = (category: any) => {
-      if (category.image) {
-        return category.image
-      }
-      if (category.slug) {
-        return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(category.slug)}&w=900&q=80`
-      }
-      return 'https://images.unsplash.com/featured/?fashion&w=900&q=80'
+      if (category.image) return category.image;
+      if (category.slug) return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(category.slug)}&w=900&q=80`;
+      return 'https://images.unsplash.com/featured/?fashion&w=900&q=80';
     }
 
     return { 
       productStore,
+      isLoading,
       cardsContainer,
       trackRef,
       thumbWidth,
@@ -321,5 +336,48 @@ export default {
 .scrollbar-thumb:active {
   cursor: grabbing;
   background-color: #000000;
+}
+
+/* ---- 🎬 Transitions & squelettes de chargement ---- */
+
+.error-state {
+  padding: 40px 0;
+  text-align: center;
+  color: #ef4444;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.card-reveal {
+  animation: cardReveal 0.45s ease backwards;
+}
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-reveal {
+    animation: none;
+  }
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none;
+  }
 }
 </style>

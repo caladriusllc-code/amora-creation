@@ -9,13 +9,17 @@
                 <h3 class="product-name">{{ name }}</h3>
                 <p class="product-price">{{ formatPrice(price) }}</p>
             </div>
-            <cart-button @click="$emit('addToCart')"/>
+            <cart-button 
+                @click="$emit('addToCart')"
+                :isLoading="isLoading"
+            />
         </div>
       </div>
 </template>
 
 <script>
 import cartButton from '../buttons/cartButton.vue';
+import { useCartStore } from '../../stores/cartStore'
 export default {
     name: 'productCards',
     components:{
@@ -26,9 +30,13 @@ export default {
         name: String,
         price: Number,
         sale: Boolean,
+        isLoading: Boolean
     },
     emits: ['addToCart', 'goToProductDetail'],
     setup(props) {
+
+        const cartStore = useCartStore();
+        
         const formatPrice = (amount) => {
           return new Intl.NumberFormat('fr-FR', { 
             style: 'currency', 
@@ -45,6 +53,7 @@ export default {
         };
 
         return {
+          cartStore,
           formatPrice,
           handleImageError
         };

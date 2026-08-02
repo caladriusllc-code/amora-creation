@@ -1,6 +1,14 @@
 <template>
     <section class="main-layout">
-        <div class="pic-background" :style="{ backgroundImage: `url(${backgroundImage})` }">
+        <div v-if="isLoading" class="pic-background skeleton-bg">
+            <div class="overlay skeleton-overlay">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-subtitle"></div>
+                <div class="skeleton skeleton-btn"></div>
+            </div>
+        </div>
+
+        <div v-else class="pic-background" :style="heroStyle">
             <div class="overlay">
                 <h1>{{ title }}</h1>
                 <p>{{ subtitle }}</p>
@@ -8,10 +16,16 @@
             </div>
         </div>
 
-        <productGrid
-            v-if="featuredCollection" 
-            :collection-id="featuredCollection.id" 
-        />
+        <div id="grid-products" class="collection-section">
+            
+            <skeleton v-if="isLoading || productStore.isLoading" />
+
+            <productGrid
+                v-show="featuredCollection && !isLoading && !productStore.isLoading" 
+                :collection-id="featuredCollection?.id" 
+            />
+            
+        </div>
     </section>
 </template>
 
@@ -19,20 +33,28 @@
 import { computed, onMounted } from 'vue'
 import goToButton from '../buttons/goToButton.vue'
 import { useProductStore } from '../../stores/productStore'
-import productGrid from './productGrid.vue';
+import productGrid from './productGrid.vue'
+import skeleton from '../tools/skeleton.vue' // Ton composant Skeleton de cartes
 
 export default {
     name: 'HeroSection',
     components: {
         goToButton,
-        productGrid
+        productGrid,
+        skeleton
     },
 
     setup(){
         const productStore = useProductStore()
 
+        // 1. État de chargement des collections pour le Hero
+        const isLoading = computed(() => {
+            return productStore.collectionsLoading || productStore.collections.length === 0
+        })
+
         const featuredCollection = computed(() => {
-            return productStore.collections.find((collection) => collection.is_featured) || productStore.collections[0] || null
+            if (!productStore.collections.length) return null
+            return productStore.collections.find((collection) => collection.is_featured) || productStore.collections[0]
         })
 
         const title = computed(() => {
@@ -43,22 +65,20 @@ export default {
             return featuredCollection.value?.description || 'Découvrez nos dernières créations'
         })
 
+        // 2. Gestion de l'image de fond uniquement si elle existe
         const backgroundImage = computed(() => {
-            // ✨ 1. Si on a uploadé une image dans Django, on l'utilise !
             if (featuredCollection.value?.image) {
-                // Selon ta configuration Django, l'URL peut être relative. 
-                // Si l'image ne s'affiche pas, dé-commente la ligne du dessous à la place :
-                // return `http://127.0.0.1:8000${featuredCollection.value.image}`
                 return featuredCollection.value.image
             }
+            return null
+        })
 
-            // ✨ 2. Plan B : Si la collection n'a pas d'image, on utilise Unsplash avec le slug
-            if (featuredCollection.value?.slug) {
-                return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(featuredCollection.value.slug)}&w=1170&q=80`
+        // 3. Style réactif pour l'arrière-plan
+        const heroStyle = computed(() => {
+            if (backgroundImage.value) {
+                return { backgroundImage: `url(${backgroundImage.value})` }
             }
-            
-            // ✨ 3. Plan C : Image par défaut ultime
-            return 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+            return { backgroundColor: '#1a1a1a' }
         })
 
         const scrollToGrid = ()=> {
@@ -74,11 +94,13 @@ export default {
             }
         })
 
-        return{
-            featuredCollection, // ✨ AJOUT ICI : Il faut l'exporter pour l'utiliser dans le template
+        return {
+            productStore,
+            isLoading,
+            featuredCollection,
             title,
             subtitle,
-            backgroundImage,
+            heroStyle,
             scrollToGrid
         }
     },
@@ -92,19 +114,20 @@ export default {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    
-    /* Largeur totale */
     width: 100%;
-    
-    /* Hauteur pour ordinateur : 70% de l'écran, avec un minimum pour que le texte rentre */
     height: 70vh; 
     min-height: 400px; 
-    
-    /* L'image de fond a été retirée d'ici car elle est maintenant gérée dans le template ! */
-    background-size: cover; /* L'image couvre tout l'espace sans se déformer */
-    background-position: center; /* L'image reste bien centrée */
+    background-size: cover; 
+    background-position: center; 
     background-repeat: no-repeat;
     position: relative; 
+}
+
+.collection-section {
+    padding: 5rem 2rem; /* Espace en haut et en bas de la grille */
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Centre la grille et le skeleton */
 }
 
 .overlay {
@@ -131,7 +154,50 @@ export default {
     margin-bottom: 1rem;
 }
 
-/* --- Section 2 : La galerie de la collection --- */
+/* =========================================
+   💀 SKELETON STYLES (Animations de chargement)
+   ========================================= */
+
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+    background: #e0e0e0;
+    background-image: linear-gradient(90deg, #e0e0e0 0px, #af3232 40px, #e0e0e0 80px);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+    border-radius: 4px;
+}
+
+.skeleton-bg {
+    background: #d3d3d3;
+}
+
+.skeleton-overlay {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-title {
+    width: 300px;
+    height: 3.5rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+}
+
+.skeleton-subtitle {
+    width: 250px;
+    height: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.skeleton-btn {
+    width: 180px;
+    height: 50px;
+    border-radius: 25px;
+}
+
 .collection-section {
     padding: 5rem 2rem;
     background-color: #fafafa;
@@ -144,10 +210,8 @@ export default {
     margin-bottom: 3rem;
 }
 
-/* Grille responsive pour les vêtements */
 .products-grid {
     display: grid;
-    /* Crée automatiquement autant de colonnes de 280px minimum que possible */
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2.5rem;
     max-width: 1200px;
@@ -156,9 +220,17 @@ export default {
 
 @media (max-width: 768px) {
     .pic-background {
-        /* On réduit un peu la hauteur sur mobile pour que le contenu en dessous soit visible plus vite */
         height: 80vh;
         min-height: 300px; 
+    }
+    
+    .skeleton-title {
+        width: 80%;
+        height: 2.5rem;
+    }
+    
+    .skeleton-subtitle {
+        width: 60%;
     }
 }
 </style>
