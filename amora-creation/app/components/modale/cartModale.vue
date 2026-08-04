@@ -17,9 +17,9 @@
                         <p>Chargement...</p>
                     </div>
 
-                    <div v-else-if="cartItems.length === 0" class="empty-cart">
+                    <div v-else-if="cartItems.length === 0" class="empty-cart w-full flex flex-col items-center justify-center gap-4">
                         <p>Votre panier est vide.</p>
-                        <button class="continue-btn" @click="$emit('close')">Continuer mes achats</button>
+                        <shopButton @click="$emit('close')" label="Continuer mes achats"/>
                     </div>
                     
                     <div class="cart-items-list" v-else>
@@ -67,8 +67,11 @@
 <script lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useCartStore } from '../../stores/cartStore';
+import shopButton from '../buttons/shopButton.vue'
 
 export default {
+
+    components:{ shopButton},
     props: {
         isOpen: { type: Boolean, default: false }
     },

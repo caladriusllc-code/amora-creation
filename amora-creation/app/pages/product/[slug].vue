@@ -1,6 +1,6 @@
 <template>
   <div class="main-layout">
-    <Mainheader theme="dark"/>
+    <Mainheader theme="dark" @toggle-cart="toggleCart"/>
     <productDetail @addToCart="toggleCart"/>
     <cartModale :isOpen="isCartOpen" @close="toggleCart"/>
   </div>

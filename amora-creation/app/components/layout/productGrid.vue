@@ -17,6 +17,8 @@
       <ProductCards
         v-for="product in formattedProducts"
         :key="product.id"
+        class="reveal-item"
+        v-scroll-reveal
         :image="product.image"
         :name="product.name"
         :price="product.price"
@@ -43,13 +45,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import ProductCards from '../cards/ProductCards.vue'; 
-import skeleton from '../tools/skeleton.vue'
+import skeleton from '../tools/skeleton.vue';
 import { useRouter } from 'vue-router';
-// 🛠️ 1. On importe ton Store Pinia
 import { useProductStore } from '../../stores/productStore';
 import { useCartStore } from '../../stores/cartStore';
 
-// Définition des props (On enlève 'products' car c'est le store qui gère ça maintenant)
+// Définition des props
 interface Props {
   title?: string;
   subtitle?: string;
@@ -62,29 +63,64 @@ const props = withDefaults(defineProps<Props>(), {
   collectionId: undefined,
 });
 
-// 🛠️ 2. On initialise le store et le router
+// Initialisation des stores et router
 const productStore = useProductStore();
 const cartStore = useCartStore();
 const router = useRouter();
 const loadingProductIds = ref<Set<string | number>>(new Set());
 
-// 🛠️ 3. On formate les données de Django pour qu'elles collent parfaitement à ton design
-// 🛠️ 3. On filtre et on formate les données de Django
+// ------------------------------------------------------------------
+// ANIMATION AU SCROLL (Nouvelle logique)
+// ------------------------------------------------------------------
+let delayCounter = 0;
+let delayTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Directive Vue personnalisée
+const vScrollReveal = {
+  mounted: (el: HTMLElement) => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Applique un délai incrémental pour l'effet en cascade
+            setTimeout(() => {
+              entry.target.classList.add('is-visible');
+            }, delayCounter * 120); // 120ms entre chaque carte
+
+            delayCounter++;
+
+            // Réinitialise le compteur quand la "vague" d'apparition est terminée
+            if (delayTimer) clearTimeout(delayTimer);
+            delayTimer = setTimeout(() => {
+              delayCounter = 0;
+            }, 50);
+
+            // Arrête d'observer l'élément une fois apparu (pour ne pas rejouer l'animation)
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { 
+        threshold: 0.1 // L'animation se déclenche quand 10% de la carte est visible
+      }
+    );
+    observer.observe(el);
+  }
+};
+
+// ------------------------------------------------------------------
+// FORMATAGE DES DONNÉES
+// ------------------------------------------------------------------
 const formattedProducts = computed(() => {
-  
-  // ✨ ÉTAPE A : On filtre les produits si un collectionId a été passé
   let productsToShow = productStore.products;
   
   if (props.collectionId) {
     productsToShow = productsToShow.filter(p => {
-      // Selon comment ton backend Django envoie la donnée, 
-      // p.collection peut être directement un ID (ex: 2) ou un objet (ex: { id: 2, name: '...' })
       const productCollectionId = p.collection?.id || p.collection;
       return productCollectionId === props.collectionId;
     });
   }
 
-  // ✨ ÉTAPE B : On formate les produits filtrés (ton code précédent intact)
   return productsToShow.map(p => {
     let imageUrl = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
     if (p.images && p.images.length > 0) {
@@ -104,7 +140,7 @@ const formattedProducts = computed(() => {
 });
 
 // ------------------------------------------------------------------
-// LOGIQUE DE LA SCROLLBAR (inchangée)
+// LOGIQUE DE LA SCROLLBAR
 // ------------------------------------------------------------------
 const cardsContainer = ref<HTMLElement | null>(null);
 const trackRef = ref<HTMLElement | null>(null);
@@ -202,7 +238,6 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
 // ------------------------------------------------------------------
 // ACTIONS PRODUITS
 // ------------------------------------------------------------------
-
 async function addToCart(id: string | number) {
   const nextLoadingIds = new Set(loadingProductIds.value);
   nextLoadingIds.add(id);
@@ -217,24 +252,18 @@ async function addToCart(id: string | number) {
     nextLoadingIdsAfter.delete(id);
     loadingProductIds.value = nextLoadingIdsAfter;
   }
-
-  console.log(`Produit ${id} ajouté au panier!`);
 }
 
 function goToProductDetail(slug: string) {
-  // On utilise le slug généré par Django pour faire une belle URL SEO-friendly !
   router.push(`/product/${slug}`);
-  console.log(`Allons à la page de detail du produit: ${slug}`);
 }
 
 // Lifecycle hooks
 let resizeObserver: ResizeObserver | null = null;
 
 onMounted(async () => {
-  // 🛠️ 4. On demande au store d'aller chercher les produits sur Django
   await productStore.fetchProducts();
 
-  // On met à jour la scrollbar une fois les données chargées
   updateScrollbar();
   window.addEventListener('resize', updateScrollbar);
   
@@ -254,6 +283,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ------------------------------------------------------------------ */
+/* 🎭 STYLES D'ANIMATION DES CARTES                                   */
+/* ------------------------------------------------------------------ */
+.reveal-item {
+  opacity: 0;
+  /* La carte est légèrement poussée vers la droite/le bas avant d'apparaître */
+  transform: translateY(20px) scale(0.95); 
+  transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), 
+              transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.reveal-item.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ------------------------------------------------------------------ */
+/* STYLES EXISTANTS                                                   */
+/* ------------------------------------------------------------------ */
 .product-section {
   width: 100%;
   max-width: 1280px;
@@ -276,46 +324,17 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.control-btn {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #e5e7eb;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.cards-layout {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.cards-layout::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
-.control-btn:hover {
-  background: #000;
-  color: #fff;
-}
-
-.image-wrapper {
-  aspect-ratio: 1 / 1;
-  position: relative;
-  background-color: #f3f3f3;
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.sale-badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background-color: #ef4444;
-  color: white;
-  font-size: 10px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  text-transform: uppercase;
-  z-index: 10;
-  font-family: 'Inter', sans-serif;
-}
-
-/* Custom Scrollbar Styles */
 .custom-scrollbar-container {
   width: 100%;
   max-width: 400px;

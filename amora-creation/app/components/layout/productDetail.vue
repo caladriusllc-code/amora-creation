@@ -3,11 +3,17 @@
         
         <div class="pic-detail-layout">
             <article class="main-pic">
-                <img :src="mainImage" :alt="product.name">
+                <img :src="currentMainImage" :alt="product.name">
             </article>
             
             <div ref="cardsContainer" class="cards-layout" v-if="secondaryImages.length > 0">
-                <article v-for="img in secondaryImages" :key="img.id" class="second-pic">
+                <article 
+                    v-for="img in secondaryImages" 
+                    :key="img.id" 
+                    class="second-pic"
+                    @click="setMainImage(img.image)"
+                    style="cursor: pointer;"
+                >
                     <img :src="img.image" :alt="product.name">
                 </article>
             </div>
@@ -34,7 +40,7 @@
                         {{ product.discount_price ? product.discount_price : product.price }} FCFA
                     </p>
                 </div>
-                <shopButton @click="$emit('addToCart')"/>
+                <shopButton @click="addToCart()"/>
             </div>
 
             <productSizes/>
@@ -50,8 +56,10 @@
 
 <script lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router'; // ✨ Pour lire l'URL
-import { useProductStore } from '../../stores/productStore'; // ✨ Ton store
+import { useRoute } from 'vue-router';
+import { useProductStore } from '../../stores/productStore';
+import { useCartStore } from '../../stores/cartStore'
+import type { Product } from '../../stores/productStore'
 
 import productGrid from '../layout/productGrid.vue';
 import productCategory from '../layout/productsCategory.vue'
@@ -61,7 +69,7 @@ import productColors from '../tools/productColors.vue'
 import shopButton from '../buttons/shopButton.vue'
 
 export default {
-    components:{
+    components: {
         productGrid,
         productCategory,
         cartButton,
@@ -73,25 +81,35 @@ export default {
     setup() {
         const route = useRoute();
         const productStore = useProductStore();
+        const cartStore = useCartStore();
 
-        // ✨ 1. Trouver le produit grâce au SLUG dans l'URL
         const product = computed(() => {
-            const slug = route.params.slug; // Récupère "robe-d-ete" depuis /product/robe-d-ete
+            const slug = route.params.slug;
             return productStore.products.find(p => p.slug === slug);
         });
 
-        // ✨ 2. Extraire l'image principale
-        const mainImage = computed(() => {
+        // 🛠️ NOUVEAU : Une variable pour stocker l'image sélectionnée au clic
+        const selectedImage = ref<string | null>(null);
+
+        // 🛠️ MODIFIÉ : L'image principale affiche "selectedImage" si elle existe, sinon elle prend l'image par défaut
+        const currentMainImage = computed(() => {
+            if (selectedImage.value) return selectedImage.value;
+            
             if (!product.value?.images?.length) return 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
             const main = product.value.images.find(img => img.is_main);
             return main ? main.image : product.value.images[0].image;
         });
 
-        // ✨ 3. Extraire les autres images pour les miniatures
+        // 🛠️ MODIFIÉ : Les miniatures affichent toutes les images SAUF celle qui est actuellement en grand
         const secondaryImages = computed(() => {
             if (!product.value?.images?.length) return [];
-            return product.value.images.filter(img => !img.is_main);
+            return product.value.images.filter(img => img.image !== currentMainImage.value);
         });
+
+        // 🛠️ NOUVEAU : Fonction appelée lors du clic sur une miniature
+        const setMainImage = (imageUrl: string) => {
+            selectedImage.value = imageUrl;
+        };
 
         // --- Refs pour le scrolling (inchangé) ---
         const cardsContainer = ref<HTMLElement | null>(null);
@@ -173,8 +191,23 @@ export default {
             });
         };
 
+        // Logique pour ajouter le produit au panier
+
+        async function addToCart(){
+
+            try{
+                if (product.value?.id){
+                    await cartStore.addToCart(product.value.id, 1)
+                }
+
+                return cartStore.cart;
+            } catch(error: any){
+                console.error('Erreur lors de l\'ajout au panier:', error);
+                throw new Error(error.message || 'Erreur inconnue lors de l\'ajout au panier');
+            }
+        }
+
         onMounted(async () => {
-            // ✨ 4. S'assurer que les produits sont chargés si l'utilisateur arrive directement sur cette page
             if (!productStore.products.length) {
                 await productStore.fetchProducts();
             }
@@ -182,15 +215,15 @@ export default {
             const container = cardsContainer.value;
             if (container) {
                 container.addEventListener('scroll', updateScrollbar);
-                // Petit délai pour laisser le DOM afficher les images avant de calculer la scrollbar
                 setTimeout(() => updateScrollbar(), 100); 
             }
         });
 
         return {
-            product, // On retourne le produit pour le template
-            mainImage, // L'image principale
-            secondaryImages, // Les miniatures
+            product,
+            currentMainImage, // 🛠️ Exporter la nouvelle variable
+            secondaryImages, 
+            setMainImage,     // 🛠️ Exporter la fonction de clic
             
             cardsContainer,
             trackRef,
@@ -200,6 +233,8 @@ export default {
             startDrag,
             handleTrackClick,
             updateScrollbar,
+            addToCart,
+            cartStore
         };
     }
 }

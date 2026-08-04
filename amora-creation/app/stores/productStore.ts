@@ -22,15 +22,24 @@ export interface Collection {
   image?: string
 }
 
+export interface ProductImage {
+  id?: number | string
+  image: string
+  is_main?: boolean
+}
+
 export interface Product {
   id?: number | string
   name: string
   slug: string
   description: string
-  price: number
+  price: number | string
+  discount_price?: number | string | null
   image?: string
+  images?: ProductImage[]
   category?: Category
-  is_in_stock?: boolean // Ajouté car utilisé dans ton getter
+  collection?: Collection | number | string
+  is_in_stock?: boolean
 }
 
 // Typage générique pour les réponses paginées de Django REST Framework

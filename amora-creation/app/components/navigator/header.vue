@@ -15,7 +15,7 @@
     </div>
     
     <nav class="main-nav">
-      <div class="logo">Amora.</div>
+      <div class="logo" @click="()=>{router.push('/')}">Amora.</div>
       
       <ul class="nav-links">
         <li class="active"><NuxtLink to="/Collection">Collection</NuxtLink></li>
@@ -130,7 +130,6 @@ export default {
 
     onMounted(() => {
       window.addEventListener('scroll', handleScroll);
-      cartStore.
     });
 
     onUnmounted(() => {

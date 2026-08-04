@@ -64,7 +64,7 @@ export const useCartStore = defineStore('cart', () => {
 
     }
 
-    async function addToCart(productId: string, quantity: number = 1){
+    async function addToCart(productId: string | number, quantity: number = 1){
         isLoading.value = true;
         message.value = null;
 

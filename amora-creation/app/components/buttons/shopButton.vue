@@ -2,7 +2,7 @@
     <button class="cart-button" :disabled="isButtonLoading" :aria-busy="isButtonLoading">
 
         <template v-if="!isButtonLoading">
-            <span>Acheter</span>
+            <span>{{ label }}</span>
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 fill="none" viewBox="0 0 24 24" 
@@ -25,9 +25,11 @@ import { computed } from 'vue';
 const props = withDefaults(defineProps<{
     isLoading?: boolean;
     loading?: boolean;
+    label?: string;
 }>(), {
     isLoading: false,
     loading: false,
+    label: 'Acheter'
 });
 
 const isButtonLoading = computed(() => props.isLoading || props.loading);
