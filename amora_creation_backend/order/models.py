@@ -3,6 +3,7 @@ from django.db import models
 from django.conf import settings
 from product.models import Product
 from cart.models import Coupon # Assure-toi que l'import correspond à ton architecture
+from decimal import Decimal
 
 class GuestInfo(models.Model):
     """
@@ -67,7 +68,7 @@ class Order(models.Model):
     discount_amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
-        default=0.00, 
+        default=Decimal('0.00'), 
         help_text="Montant exact déduit via le coupon"
     )
 
@@ -105,8 +106,11 @@ class Order(models.Model):
 
     def update_total(self):
         """Recalcule et sauvegarde le total depuis les lignes (OrderItem)."""
-        subtotal = sum(item.get_subtotal() for item in self.order_items.all())
-        self.total_amount = max(subtotal - self.discount_amount, 0)
+        # 👈 CORRECTION ICI : on s'assure que la somme part de Decimal('0.00') au cas où le panier est vide
+        subtotal = sum((item.get_subtotal() for item in self.order_items.all()), Decimal('0.00'))
+        
+        # 👈 CORRECTION ICI : le 0 final devient Decimal('0.00')
+        self.total_amount = max(subtotal - self.discount_amount, Decimal('0.00'))
         self.save()
 
     def can_be_cancelled(self):

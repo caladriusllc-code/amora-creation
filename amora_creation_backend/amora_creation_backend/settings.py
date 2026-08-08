@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,6 +46,17 @@ INSTALLED_APPS = [
     'cart',
     'order'
 ]
+
+REST_FRAMEWORK = {
+    # 1. On autorise l'accès à tout le monde par défaut (puisque ce sont tous des invités)
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    ),
+    
+    # 2. On désactive l'authentification par session de DRF pour l'API.
+    # C'est ÇA qui va faire disparaître ton erreur CSRF 403 pour de bon !
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

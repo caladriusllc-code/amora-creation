@@ -3,6 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import (
     Product, Coupon, 
@@ -49,6 +51,7 @@ class CartViewSet(viewsets.ViewSet):
             )
         return response
 
+    @method_decorator(ensure_csrf_cookie)
     @action(detail=False, methods=['get'])
     def get_cart(self, request):
         """Récupère ou crée le panier en fonction du cookie."""

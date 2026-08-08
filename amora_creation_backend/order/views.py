@@ -10,22 +10,27 @@ from order.models import Order, OrderItem, GuestInfo
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
+from decimal import Decimal
+
 @method_decorator(csrf_exempt, name='dispatch')
 class OrderViewSet(viewsets.ViewSet):
     """
     Gestion des commandes.
     """
     # 👇 AJOUTE CETTE LIGNE ICI
-    authentication_classes = [] 
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'])
     @transaction.atomic
     def checkout(self, request):
         """
         Endpoint: POST /api/orders/checkout/
         """
         data = request.data
-        session_key = data.get('session_key')
+        session_key = (
+            data.get('session_key') 
+            or request.COOKIES.get('session_id') 
+            or request.COOKIES.get('session_key')
+        )
 
         if not session_key:
             return Response({"error": "Session key manquante."}, status=status.HTTP_400_BAD_REQUEST)
@@ -65,13 +70,15 @@ class OrderViewSet(viewsets.ViewSet):
         )
 
         if cart.coupon and cart.coupon.is_valid():
-            subtotal = cart.get_total()
-            discount_amount = 0
+            subtotal = cart.get_total() # Ça retourne normalement un Decimal
+            discount_amount = Decimal('0.00')
             
             if cart.coupon.discount_type == 'percentage':
-                discount_amount = (cart.coupon.discount_value / 100) * subtotal
+                # 👈 CORRECTION : On divise par Decimal('100') pour garder un objet Decimal
+                discount_amount = (cart.coupon.discount_value / Decimal('100')) * subtotal
             elif cart.coupon.discount_type == 'fixed':
-                discount_amount = cart.coupon.discount_value
+                # 👈 CORRECTION : On s'assure que la valeur fixe est bien un Decimal
+                discount_amount = Decimal(str(cart.coupon.discount_value))
             
             order.discount_amount = discount_amount
             cart.coupon.used_count += 1
