@@ -57,7 +57,12 @@
                         <span class="total-label">Total :</span>
                         <span class="total-amount">{{ formatPrice(cartTotal) }}</span>
                     </div>
-                    <button class="checkout-button">Commander</button>
+                    <button 
+                        class="checkout-button" 
+                        @click="()=> {router.push('/order')}" 
+                        >
+                            Commander
+                        </button>
                 </div>
             </div>
         </div>
@@ -67,6 +72,7 @@
 <script lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useCartStore } from '../../stores/cartStore';
+import { useRouter } from 'vue-router'
 import shopButton from '../buttons/shopButton.vue'
 
 export default {
@@ -78,6 +84,9 @@ export default {
     emits: ['close'],
     
     setup() {
+
+        const router = useRouter();
+
         const cartStore = useCartStore();
         
         // État de chargement léger par article
@@ -133,6 +142,7 @@ export default {
         });
 
         return { 
+            router,
             cartItems, cartTotal, isGlobalLoading, loadingItemId,
             formatPrice, getCoverImage, increaseQuantity, decreaseQuantity, removeItem
         };

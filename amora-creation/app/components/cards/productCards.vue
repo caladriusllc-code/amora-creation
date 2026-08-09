@@ -1,129 +1,145 @@
 <template>
-    <div class="pro-card">
-        <div class="image-wrapper" @click="$emit('goToProductDetail')">
-          <span v-if="sale" class="sale-badge">Sale</span>
-          <img :src="image" :alt="name" class="product-image" />
-        </div>
-        <div class="card-footer w-full flex flex-row items-center justify-between">
-            <div class="product-info">
-                <h3 class="product-name">{{ name }}</h3>
-                <p class="product-price">{{ formatPrice(price) }}</p>
-            </div>
-            <cart-button 
-                @click="$emit('addToCart')"
-                :isLoading="isLoading"
-            />
-        </div>
+  <div class="pro-card">
+    <div class="image-wrapper" @click="$emit('goToProductDetail')">
+      <span v-if="sale" class="sale-badge">Sale</span>
+      <img
+        :src="image"
+        :alt="name"
+        class="product-image"
+        @error="handleImageError"
+      />
+    </div>
+    <div
+      class="card-footer w-full flex flex-row items-center justify-between"
+    >
+      <div class="product-info">
+        <h3 class="product-name">{{ name }}</h3>
+        <p class="product-price">{{ formatPrice(price) }}</p>
       </div>
+      <cart-button
+        @click="$emit('addToCart')"
+        :isLoading="isLoading"
+      />
+    </div>
+  </div>
 </template>
 
 <script>
 import cartButton from '../buttons/cartButton.vue';
-import { useCartStore } from '../../stores/cartStore'
+import { useCartStore } from '../../stores/cartStore';
+
 export default {
-    name: 'productCards',
-    components:{
-        cartButton
-    },
-    props:{
-        image: String,
-        name: String,
-        price: Number,
-        sale: Boolean,
-        isLoading: Boolean
-    },
-    emits: ['addToCart', 'goToProductDetail'],
-    setup(props) {
+  name: 'productCards',
+  components: {
+    cartButton,
+  },
+  props: {
+    image: String,
+    name: String,
+    price: Number,
+    sale: Boolean,
+    isLoading: Boolean,
+  },
+  emits: ['addToCart', 'goToProductDetail'],
+  setup(props) {
+    const cartStore = useCartStore();
 
-        const cartStore = useCartStore();
-        
-        const formatPrice = (amount) => {
-          return new Intl.NumberFormat('fr-FR', { 
-            style: 'currency', 
-            currency: 'XOF',
-            maximumFractionDigits: 0
-          }).format(amount || 0);
-        };
+    const formatPrice = (amount) => {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'XOF',
+        maximumFractionDigits: 0,
+      }).format(amount || 0);
+    };
 
-        console.log('ProductCards - Image prop reçue:', props.image);
+    const handleImageError = (e) => {
+      console.error('Erreur chargement image:', props.image, e);
+      e.target.src =
+        'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
+    };
 
-        const handleImageError = (e) => {
-            console.error('Erreur chargement image:', props.image, e);
-            e.target.src = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
-        };
-
-        return {
-          cartStore,
-          formatPrice,
-          handleImageError
-        };
-    }
-}
+    return {
+      cartStore,
+      formatPrice,
+      handleImageError,
+    };
+  },
+};
 </script>
 
 <style scoped>
-    .pro-card {
-    flex-shrink: 0;
-    width: 280px;
-    scroll-snap-align: start;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-    }
+.pro-card {
+  flex-shrink: 0;
+  width: 280px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
 
-    .pro-card:hover {
-    transform: translateY(-4px);
-    }
+.image-wrapper {
+  aspect-ratio: 1 / 1;
+  position: relative;
+  background-color: #f3f3f3;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  
+  /* Masquage strict pour que l'image ne déborde pas au zoom */
+  overflow: hidden; 
+  
+  /* Isolation 3D pour éviter les conflits avec l'animation v-scroll-reveal du parent */
+  transform: translateZ(0);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  isolation: isolate;
+}
 
-    .image-wrapper {
-    aspect-ratio: 1 / 1;
-    position: relative;
-    background-color: #f3f3f3;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 16px;
-    }
+.sale-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 1px;
+  font-weight: bold;
+  text-transform: uppercase;
+  z-index: 10;
+}
 
-    .sale-badge {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    background-color: #ef4444;
-    color: white;
-    font-size: 10px;
-    padding: 4px 8px;
-    border-radius: 1px;
-    font-weight: bold;
-    text-transform: uppercase;
-    z-index: 10;
-    }
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  
+  /* Préparation matérielle pour une animation fluide */
+  will-change: transform;
+  backface-visibility: hidden;
+  
+  /* Transition forcée (!important aide si Tailwind est utilisé) */
+  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
 
-    .product-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-    }
+/* LE DÉCLENCHEUR : Uniquement quand on survole le bloc de l'image */
+.image-wrapper:hover .product-image {
+  transform: scale(1.1) !important; 
+}
 
-    .product-card:hover .product-image {
-    transform: scale(1.05);
-    }
+.product-info {
+  font-family: 'Urbanist', sans-serif;
+}
 
-    .product-info {
-    font-family: 'Urbanist', sans-serif;
-    }
+.product-name {
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+  font-size: 16px;
+}
 
-    .product-name {
-    font-weight: 700;
-    color: #111827;
-    margin: 0 0 4px 0;
-    font-size: 16px;
-    }
-
-    .product-price {
-    font-weight: 900;
-    color: #111827;
-    font-size: 18px;
-    margin: 0;
-    }
-
+.product-price {
+  font-weight: 900;
+  color: #111827;
+  font-size: 18px;
+  margin: 0;
+}
 </style>
