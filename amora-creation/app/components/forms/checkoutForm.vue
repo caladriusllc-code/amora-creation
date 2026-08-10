@@ -49,10 +49,17 @@
                     @input="clearError('shipping_address')"
                 />
             </div>
+
+            <BaseSelect 
+                v-model="formData.city"
+                :options="cityOptions"
+                placeholder="Moyen de paiement"
+                :errorMessage="errors.city"
+            />
         </div>
 
-        <button type="submit" class="submit-btn" :disabled="isLoading">
-            {{ isLoading ? 'Validation en cours...' : 'Valider la commande' }}
+        <button type="submit" class="submit-btn" :disabled="orderStore.isLoading">
+            {{ orderStore.isLoading ? 'Validation en cours...' : 'Valider la commande' }}
         </button>
     </form>
 </template>
@@ -60,17 +67,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BaseInput from '../input/BaseInput.vue' 
+import BaseSelect from '../input/BaseSelect.vue'
 import { useOrderStore } from '../../stores/orderStore'
-import type { Order } from '../../stores/orderStore'
+import type { GuestInfo } from '../../stores/orderStore'
 
 const orderStore = useOrderStore();
 const emit = defineEmits(['submit-checkout'])
 
-// État de chargement
-const isLoading = ref(false)
+// 💡 SUPPRIMÉ : const isLoading = ref(false) (On utilise celui du store)
 
-// Données du formulaire
-const formData = ref<Order>({
+const formData = ref<GuestInfo>({
     full_name: '',
     email: '',
     phone_number: '',
@@ -78,7 +84,6 @@ const formData = ref<Order>({
     shipping_address: ''
 })
 
-// État des erreurs pour le nouveau composant BaseInput
 const errors = ref({
     full_name: '',
     email: '',
@@ -87,26 +92,31 @@ const errors = ref({
     shipping_address: ''
 })
 
-// Fonction pour effacer l'erreur dès que l'utilisateur commence à taper
 const clearError = (field: keyof typeof errors.value) => {
     errors.value[field] = ''
 }
 
-// Fonction de validation du formulaire
+// Le format attendu par ton composant BaseSelect
+const cityOptions = ref([
+  { label: 'Abidjan', value: 'abidjan' },
+  { label: 'Yamoussoukro', value: 'yamoussoukro' },
+  { label: 'Bouaké', value: 'bouake' }
+]);
+
 const validateForm = () => {
     let isValid = true;
     
-    // Réinitialiser les erreurs
     Object.keys(errors.value).forEach(key => {
         errors.value[key as keyof typeof errors.value] = ''
     });
 
-    if (!formData.value.full_name.trim()) {
+    // 💡 CORRECTION ICI : On sécurise le .trim() au cas où la valeur serait null ou undefined
+    if (!(formData.value.full_name || '').trim()) {
         errors.value.full_name = 'Le nom est requis.';
         isValid = false;
     }
 
-    if (!formData.value.email.trim()) {
+    if (!(formData.value.email || '').trim()) {
         errors.value.email = 'L\'email est requis.';
         isValid = false;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
@@ -114,17 +124,17 @@ const validateForm = () => {
         isValid = false;
     }
 
-    if (!formData.value.phone_number.trim()) {
+    if (!(formData.value.phone_number || '').trim()) {
         errors.value.phone_number = 'Le numéro de téléphone est requis.';
         isValid = false;
     }
 
-    if (!formData.value.city.trim()) {
+    if (!(formData.value.city || '').trim()) {
         errors.value.city = 'La ville est requise.';
         isValid = false;
     }
 
-    if (!formData.value.shipping_address.trim()) {
+    if (!(formData.value.shipping_address || '').trim()) {
         errors.value.shipping_address = 'L\'adresse complète est requise.';
         isValid = false;
     }
@@ -133,28 +143,22 @@ const validateForm = () => {
 }
 
 const submitOrder = async () => {
-    // 1. On valide d'abord le formulaire (ce qui va afficher les messages d'erreur si besoin)
     if (!validateForm()) {
-        return; // On stop ici si c'est invalide
+        return; 
     }
-
-    // 2. Si c'est valide, on lance la requête
-    isLoading.value = true
     
     try {
+        // 💡 Le store gère maintenant lui-même son orderStore.isLoading = true / false
         await orderStore.checkout(formData.value);
         emit('submit-checkout', formData.value)
     } catch (error) {
         console.error("Erreur lors de la validation de la commande", error);
-        // Ici tu pourrais gérer les erreurs retournées par Django (ex: stock insuffisant)
-    } finally {
-        isLoading.value = false
     }
 }
 </script>
 
 <style scoped>
-/* Le CSS reste identique, la magie opère via les composants enfants ! */
+/* Ton CSS original reste inchangé, il est parfait ! */
 .checkout-form {
     width: 100%;
     max-width: 600px;
