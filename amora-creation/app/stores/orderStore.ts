@@ -14,7 +14,7 @@ export interface GuestInfo {
 }
 
 export interface Order {
-    id: string;
+    id?: string;
     guest?: GuestInfo | null;
     status?: string;
     total_amount: number;
@@ -30,6 +30,21 @@ export interface OrderItem {
     created_at?: string;
 }
 
+export interface Paiement {
+    amount: number;
+    channel: string;
+    referenceNumber: string;
+    customerEmail: string;
+    customerFirstName: string;
+    customerLastname: string;
+    customerPhoneNumber: string;
+    description: string;
+    merchantId?: string;
+    notificationURL?: string;
+    returnURL?: string;
+    returnContext?: string;
+}
+
 export const useOrderStore = defineStore('order', () => {
 
     const { $api } = useNuxtApp();
@@ -43,6 +58,7 @@ export const useOrderStore = defineStore('order', () => {
 
     // Actions
     // 💡 CORRECTION ICI : Le payload est de type GuestInfo, car c'est ce que le formulaire envoie
+    
     async function checkout(payload: GuestInfo) {
         isLoading.value = true;
 
@@ -64,10 +80,34 @@ export const useOrderStore = defineStore('order', () => {
         }
     }
 
+    async function initiatePayment(payload?: any, email?: string){
+
+        isLoading.value = true;
+        
+        try{
+            const emailQuery = email ? `?email=${encodeURIComponent(email)}` : '';
+            const bodyData = payload ? payload : {};
+
+            const response = await $api(`/payment/initiate/${emailQuery}`, {
+                method: 'POST',
+                body: bodyData
+            });
+
+            return response;
+        } catch (err: any) {
+        message.value = err.message;
+        throw err;
+        } finally {
+        isLoading.value = false;
+        }
+
+    }
+
     return {
         isLoading,
         message,
         order,
-        checkout
+        checkout,
+        initiatePayment
     }
 })

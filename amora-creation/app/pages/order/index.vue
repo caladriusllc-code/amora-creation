@@ -3,7 +3,7 @@
         <div class="checkout-wrapper">
             
             <div class="checkout-left">
-                <checkoutForm @submit-checkout="handleCheckout" />
+                <checkoutForm @success="handlePaymentSuccess" />
             </div>
 
             <div class="checkout-right">
@@ -18,26 +18,27 @@
 import checkoutForm from '../../components/forms/checkoutForm.vue'
 import summaryCheckout from '../../components/tools/summaryCheckout.vue'
 
-// Cette fonction est déclenchée quand l'utilisateur clique sur "Valider la commande"
-const handleCheckout = async (formData: any) => {
-    console.log('Prêt à envoyer à Django !', formData)
-    
-    // C'est ici que tu feras ton appel POST vers ton backend !
-    /*
-    try {
-        const response = await $fetch('http://localhost:8000/order/orders/checkout/', {
-            method: 'POST',
-            body: {
-                ...formData,
-                session_key: 'TA_SESSION_KEY_ICI' // À récupérer depuis tes cookies ou ton store
-            }
-        })
-        console.log('Succès !', response)
-        // Rediriger vers une page de remerciement
-    } catch (error) {
-        console.error('Erreur lors du checkout', error)
+/**
+ * 💡 Cette fonction est déclenchée SEULEMENT quand le backend a répondu favorablement 
+ * à la création de la commande ET à l'initialisation du paiement.
+ */
+const handlePaymentSuccess = (data: any) => {
+    console.log('💳 [Checkout Page] Événement success reçu avec :', data);
+
+    // Si on reçoit bien une URL de la part du backend (la sandbox CinetPay/XPay/Wave, etc.)
+    if (data.paymentUrl) {
+        console.log('🔗 Redirection en cours vers la plateforme de paiement :', data.paymentUrl);
+        // 👉 Redirection de l'utilisateur vers la page de paiement
+        window.location.href = data.paymentUrl;
+    } 
+    // Si la méthode est par carte et que tu gères Stripe dans une modale plus tard (comme ton autre app)
+    else if (data.paymentMethod === 'CARD') {
+        console.log('🔵 Ouverture éventuelle d\'une modale Stripe (à implémenter si besoin)');
+        // isPaiementModale.value = true;
+    } 
+    else {
+        console.error('⚠️ Aucune URL de paiement fournie par le serveur.');
     }
-    */
 }
 </script>
 

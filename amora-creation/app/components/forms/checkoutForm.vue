@@ -1,6 +1,6 @@
 <template>
     <form @submit.prevent="submitOrder" class="checkout-form">
-        <h3>Informations de livraison</h3>
+        <h3>Informations de livraison et paiement</h3>
         
         <div class="form-grid">
             <BaseInput 
@@ -50,16 +50,20 @@
                 />
             </div>
 
-            <BaseSelect 
-                v-model="formData.city"
-                :options="cityOptions"
-                placeholder="Moyen de paiement"
-                :errorMessage="errors.city"
-            />
+            <div class="full-width">
+                <BaseSelect 
+                    v-model="formData.payment_method"
+                    label="Sélectionner votre moyen de paiement"
+                    :options="paymentOptions"
+                    placeholder="Choisissez un moyen de paiement"
+                    :errorMessage="errors.payment_method"
+                    @change="clearError('payment_method')"
+                />
+            </div>
         </div>
 
-        <button type="submit" class="submit-btn" :disabled="orderStore.isLoading">
-            {{ orderStore.isLoading ? 'Validation en cours...' : 'Valider la commande' }}
+        <button type="submit" class="submit-btn" :disabled="orderStore.isLoading || cartStore.isLoading">
+            {{ (orderStore.isLoading || cartStore.isLoading) ? 'Traitement en cours...' : 'Valider et Payer' }}
         </button>
     </form>
 </template>
@@ -68,20 +72,35 @@
 import { ref } from 'vue'
 import BaseInput from '../input/BaseInput.vue' 
 import BaseSelect from '../input/BaseSelect.vue'
+
 import { useOrderStore } from '../../stores/orderStore'
+import { useCartStore } from '../../stores/cartStore' // 👈 Import du store gérant le paiement
 import type { GuestInfo } from '../../stores/orderStore'
 
 const orderStore = useOrderStore();
-const emit = defineEmits(['submit-checkout'])
+const cartStore = useCartStore(); 
+const emit = defineEmits(['success', 'submit-checkout'])
 
-// 💡 SUPPRIMÉ : const isLoading = ref(false) (On utilise celui du store)
+// ── État de la notification ───────────────────────────────────────
+const notify = ref({
+    show: false,
+    type: 'success',
+    title: '',
+    message: ''
+});
 
-const formData = ref<GuestInfo>({
+const showNotification = (type: 'success' | 'error', title: string, message = '') => {
+    notify.value = { show: true, type, title, message };
+};
+
+// ── État du formulaire étendu (GuestInfo + payment_method) ────────
+const formData = ref<GuestInfo & { payment_method: string }>({
     full_name: '',
     email: '',
     phone_number: '',
     city: '',
-    shipping_address: ''
+    shipping_address: '',
+    payment_method: '' // 👈 Ajout du mode de paiement
 })
 
 const errors = ref({
@@ -89,20 +108,24 @@ const errors = ref({
     email: '',
     phone_number: '',
     city: '',
-    shipping_address: ''
+    shipping_address: '',
+    payment_method: ''
 })
 
 const clearError = (field: keyof typeof errors.value) => {
     errors.value[field] = ''
 }
 
-// Le format attendu par ton composant BaseSelect
-const cityOptions = ref([
-  { label: 'Abidjan', value: 'abidjan' },
-  { label: 'Yamoussoukro', value: 'yamoussoukro' },
-  { label: 'Bouaké', value: 'bouake' }
+// ── Options de paiement (mix des deux applications) ───────────────
+const paymentOptions = ref([
+    { value: 'WAVE',         name: 'Wave',          label: 'Wave' },
+    { value: 'OMCIV2',       name: 'Orange Money',  label: 'Orange Money' },
+    { value: 'FLOOZ',        name: 'Moov Money',    label: 'Moov Money' },
+    { value: 'CARD',         name: 'Visa/MasterCard', label: 'Visa/MasterCard'}
+    // Ajoute les autres options si besoin...
 ]);
 
+// ── Validation ────────────────────────────────────────────────────
 const validateForm = () => {
     let isValid = true;
     
@@ -110,7 +133,6 @@ const validateForm = () => {
         errors.value[key as keyof typeof errors.value] = ''
     });
 
-    // 💡 CORRECTION ICI : On sécurise le .trim() au cas où la valeur serait null ou undefined
     if (!(formData.value.full_name || '').trim()) {
         errors.value.full_name = 'Le nom est requis.';
         isValid = false;
@@ -139,20 +161,69 @@ const validateForm = () => {
         isValid = false;
     }
 
+    if (!formData.value.payment_method) {
+        errors.value.payment_method = 'Veuillez choisir un moyen de paiement.';
+        isValid = false;
+    }
+
     return isValid;
 }
 
+// ── Soumission globale ────────────────────────────────────────────
 const submitOrder = async () => {
     if (!validateForm()) {
+        showNotification('error', 'Champs manquants', 'Veuillez corriger les erreurs sur le formulaire.');
         return; 
     }
+
+    // 🔥 Sécurisation de l'email avec le composable Nuxt 3 useCookie
+    const backupEmailCookie = useCookie('backup_checkout_email', { maxAge: 3600 });
+    backupEmailCookie.value = formData.value.email;
     
     try {
-        // 💡 Le store gère maintenant lui-même son orderStore.isLoading = true / false
-        await orderStore.checkout(formData.value);
-        emit('submit-checkout', formData.value)
-    } catch (error) {
-        console.error("Erreur lors de la validation de la commande", error);
+        // 1. On sépare les données client (GuestInfo) du moyen de paiement
+        const payloadGuest: GuestInfo = {
+            full_name: formData.value.full_name,
+            email: formData.value.email,
+            phone_number: formData.value.phone_number,
+            city: formData.value.city,
+            shipping_address: formData.value.shipping_address
+        };
+
+        // 2. On crée la commande dans le backend
+        const order = await orderStore.checkout(payloadGuest);
+        
+        // Sécurité : On s'assure que la commande a bien été générée
+        if (!order?.id) {
+            showNotification('error', 'Erreur système', "Impossible de générer l'identifiant de la commande.");
+            return;
+        }
+
+        // 3. On initialise le paiement avec l'ID de la nouvelle commande
+        const paiementResponse = await orderStore.initiatePayment(
+            {
+                order_id: order.id,
+                payment_method: formData.value.payment_method.toUpperCase()
+            },
+            formData.value.email
+        );
+
+        // 4. On remonte l'événement vers la vue parente pour éventuellement faire une redirection
+        emit('success', {
+            paymentMethod: formData.value.payment_method,
+            email: formData.value.email,
+            fullName: formData.value.full_name,
+            phone: formData.value.phone_number,
+            paymentUrl: paiementResponse?.payment_url || null,
+        });
+        
+        emit('submit-checkout', formData.value);
+
+    } catch (error: any) {
+        console.error("Erreur lors de la validation :", error);
+        // Affichage de l'erreur venant du store ou de l'API
+        const errorMsg = cartStore.error || orderStore.error || "Une erreur est survenue lors de l'initialisation du paiement.";
+        showNotification('error', 'Échec de la commande', errorMsg);
     }
 }
 </script>
