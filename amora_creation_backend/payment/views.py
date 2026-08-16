@@ -87,11 +87,13 @@ class PaymentInitiateView(APIView):
             phone      = getattr(order.user, 'phone_number', '') or ''
 
         # ── Payload calé sur leur format sandbox ──────────────────────────
+        provider_channel = payment_method if payment_method in {'CARD', 'WAVE', 'OMCIV2', 'FLOOZ'} else 'CARD'
+
         xpaye_payload = {
             'merchantId'         : settings.XPAYE_MERCHANT_ID,
             'amount'             : int(order.total_amount),      # entier FCFA
             'description'        : f'Commande {str(order.id)[:8]}',
-            'channel'            : 'CARD',
+            'channel'            : provider_channel,
             'countryCurrencyCode': '952',                        # FCFA XOF
             'referenceNumber'    : str(transaction.id),          # ← notre clé de récup
             'customerEmail'      : order.buyer_email,            # property Order

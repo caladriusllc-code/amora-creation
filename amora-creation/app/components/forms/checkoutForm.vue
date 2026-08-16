@@ -72,6 +72,7 @@
 import { ref } from 'vue'
 import BaseInput from '../input/BaseInput.vue' 
 import BaseSelect from '../input/BaseSelect.vue'
+import { useCookie } from '#app'
 
 import { useOrderStore } from '../../stores/orderStore'
 import { useCartStore } from '../../stores/cartStore' // 👈 Import du store gérant le paiement
@@ -191,22 +192,25 @@ const submitOrder = async () => {
         };
 
         // 2. On crée la commande dans le backend
-        const order = await orderStore.checkout(payloadGuest);
-        
+        const order: any = await orderStore.checkout(payloadGuest);
+        const orderId = order?.id ?? order?.order_id;
+
         // Sécurité : On s'assure que la commande a bien été générée
-        if (!order?.id) {
+        if (!orderId) {
             showNotification('error', 'Erreur système', "Impossible de générer l'identifiant de la commande.");
             return;
         }
 
         // 3. On initialise le paiement avec l'ID de la nouvelle commande
-        const paiementResponse = await orderStore.initiatePayment(
+        const paiementResponse: any = await orderStore.initiatePayment(
             {
-                order_id: order.id,
+                order_id: orderId,
                 payment_method: formData.value.payment_method.toUpperCase()
             },
             formData.value.email
         );
+
+        const paymentUrl = paiementResponse?.payment_url || paiementResponse?.data?.payment_url || null;
 
         // 4. On remonte l'événement vers la vue parente pour éventuellement faire une redirection
         emit('success', {
@@ -214,15 +218,16 @@ const submitOrder = async () => {
             email: formData.value.email,
             fullName: formData.value.full_name,
             phone: formData.value.phone_number,
-            paymentUrl: paiementResponse?.payment_url || null,
+            paymentUrl,
         });
         
         emit('submit-checkout', formData.value);
 
     } catch (error: any) {
         console.error("Erreur lors de la validation :", error);
-        // Affichage de l'erreur venant du store ou de l'API
-        const errorMsg = cartStore.error || orderStore.error || "Une erreur est survenue lors de l'initialisation du paiement.";
+        const errorMsg = error?.response?._data?.message
+            || error?.message
+            || "Une erreur est survenue lors de l'initialisation du paiement.";
         showNotification('error', 'Échec de la commande', errorMsg);
     }
 }

@@ -102,6 +102,8 @@ class OrderViewSet(viewsets.ViewSet):
 
         return Response({
             "message": "Commande créée avec succès.",
+            "id": order.id,
             "order_id": order.id,
-            "total_amount": order.total_amount
+            "total_amount": order.total_amount,
+            "status": order.status,
         }, status=status.HTTP_201_CREATED)

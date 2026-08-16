@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 from decouple import config
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +28,7 @@ SECRET_KEY = 'django-insecure-+@09598t$v-t8s9oe+c4=bzm7p1%q2jr)k&l&@+cgb&p5p7$b_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'kettle-diploma-lifter.ngrok-free.dev']
 
 
 # Application definition
@@ -164,3 +166,34 @@ CORS_EXPOSE_HEADERS = [
     'X-CSRFToken',
     'Authorization',
 ]
+
+# ── xpaye ─────────────────────────────────────────────────
+XPAYE_MERCHANT_ID      = config('XPAYE_MERCHANT_ID')                                    # ton merchantId sandbox
+XPAYE_API_URL          = config('XPAYE_API_URL')     # URL sandbox xpaye
+XPAYE_NOTIFICATION_URL = config('XPAYE_NOTIFICATION_URL')     # ngrok en dev
+XPAYE_RETURN_URL       = config('XPAYE_RETURN_URL')    # ton frontend
+
+# ── Email & Frontend ───────────────────────────────────────
+FRONTEND_URL       = 'http://localhost:3000'
+DEFAULT_FROM_EMAIL = 'no-reply@tonsite.com'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_COOKIE': 'access_token',  # Nom du cookie pour le access token
+    'AUTH_COOKIE_REFRESH': 'refresh_token',  # Nom du cookie pour le refresh token
+    'AUTH_COOKIE_SECURE': not DEBUG,  # HTTPS seulement en production
+    'AUTH_COOKIE_HTTP_ONLY': True,  # HttpOnly pour sécurité
+    'AUTH_COOKIE_SAMESITE': 'Lax',  # ou 'Strict' selon vos besoins
+}
+
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT', cast=int)        # Cast int obligatoire
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool) # Cast bool obligatoire
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')

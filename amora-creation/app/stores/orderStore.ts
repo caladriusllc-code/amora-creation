@@ -7,7 +7,7 @@ export interface GuestInfo {
     id?: string;
     email: string;
     full_name: string;
-    phone_number?: string | null;
+    phone_number: string;
     shipping_address: string;
     city?: string;
     created_at?: string;
@@ -59,22 +59,32 @@ export const useOrderStore = defineStore('order', () => {
     // Actions
     // 💡 CORRECTION ICI : Le payload est de type GuestInfo, car c'est ce que le formulaire envoie
     
+    // Dans ton store (useOrderStore)
     async function checkout(payload: GuestInfo) {
         isLoading.value = true;
 
         try {
-            const response = await $api('order/orders/checkout/', {
+            const response: any = await $api('order/orders/checkout/', {
                 method: 'POST',
                 body: payload
             });
 
             if(response) {
                 console.log("Votre commande a été bien enrégistrée", response);
-                // Si l'API retourne la commande créée, tu peux l'assigner :
-                // order.value = response
+
+                const normalizedResponse: any = {
+                    ...response,
+                    id: response.id ?? response.order_id ?? response.order?.id,
+                    order_id: response.order_id ?? response.id ?? response.order?.id,
+                };
+
+                order.value = normalizedResponse as unknown as Order;
+                return normalizedResponse;
             }
         } catch(error: any) {
             console.error("Erreur de soumission de votre commande:", error);
+            // C'est une bonne pratique de propager l'erreur pour que le composant puisse l'attraper
+            throw error; 
         } finally {
             isLoading.value = false;
         }
