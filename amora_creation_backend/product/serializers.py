@@ -61,3 +61,13 @@ class ProductSerializer(serializers.ModelSerializer):
             # Relations et propriétés dynamiques
             'images', 'variants', 'total_stock', 'is_in_stock'
         ]
+
+class CategoryDetailSerializer(CategorySerializer):
+    """
+    Category serializer that also returns all active products belonging to the category,
+    including their variants, images, and stock info.
+    """
+    products = ProductSerializer(many=True, read_only=True)
+
+    class Meta(CategorySerializer.Meta):
+        fields = CategorySerializer.Meta.fields + ['products']

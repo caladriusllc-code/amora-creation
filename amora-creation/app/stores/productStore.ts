@@ -14,6 +14,10 @@ export interface Category {
   image?: string
 }
 
+export interface CategoryWithProducts extends Category {
+  products: Product[]
+}
+
 export interface Collection {
   id?: number
   name: string
@@ -51,7 +55,6 @@ export interface PaginatedResponse<T> {
 }
 
 export const useProductStore = defineStore('product', () => {
-  // 1. Récupérer l'instance API personnalisée
   const { $api } = useNuxtApp()
 
   // ==========================
@@ -64,15 +67,20 @@ export const useProductStore = defineStore('product', () => {
   const categories = ref<Category[]>([])
   const collections = ref<Collection[]>([])
   
-  // États de l'interface utilisateur (Chargement)
+  // Nouveau : catégorie avec ses produits
+  const categoryWithProducts = ref<CategoryWithProducts | null>(null)
+
+  // États de chargement
   const isLoading = ref<boolean>(false)
   const categoriesLoading = ref<boolean>(false)
   const collectionsLoading = ref<boolean>(false)
+  const categoryProductsLoading = ref<boolean>(false) // nouveau
 
-  // États de l'interface utilisateur (Erreurs)
+  // États d'erreur
   const error = ref<string | null>(null)
   const categoriesError = ref<string | null>(null)
   const collectionsError = ref<string | null>(null)
+  const categoryProductsError = ref<string | null>(null) // nouveau
 
   // ==========================
   // ⚙️ ACTIONS (Méthodes)
@@ -83,9 +91,7 @@ export const useProductStore = defineStore('product', () => {
     isLoading.value = true
     error.value = null
     try {
-      // Typage explicite du retour de l'API
       const response = await $api<PaginatedResponse<Product> | Product[]>('/product/products/')
-      
       products.value = 'results' in response ? response.results : response
     } catch (err: any) {
       error.value = err?.data?.message || "Impossible de charger les produits d'Amora création."
@@ -140,6 +146,29 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
+  /**
+   * Récupère une catégorie avec tous ses produits actifs.
+   * Utilise le endpoint personnalisé : /product/categories/{id}/products/
+   */
+  const fetchCategoryWithProducts = async (id: string | number) => {
+    categoryProductsLoading.value = true
+    categoryProductsError.value = null
+    categoryWithProducts.value = null
+
+    try {
+      const response = await $api<CategoryWithProducts>(
+        `/product/categories/${id}/products/`,
+        { method: 'GET' }
+      )
+      categoryWithProducts.value = response
+    } catch (err: any) {
+      categoryProductsError.value = err?.data?.message || "Impossible de charger cette catégorie et ses produits."
+      console.error(`Erreur fetchCategoryWithProducts (${id}):`, err)
+    } finally {
+      categoryProductsLoading.value = false
+    }
+  }
+
   // ==========================
   // 🔍 GETTERS (Propriétés calculées)
   // ==========================
@@ -147,6 +176,9 @@ export const useProductStore = defineStore('product', () => {
   const inStockProducts = computed<Product[]>(() => {
     return products.value.filter(p => p.is_in_stock === true)
   })
+
+  // Le nom original "fetchProductsByCategories" peut être conservé comme alias
+  const fetchProductsByCategories = fetchCategoryWithProducts
 
   // ==========================
   // 🚀 RETOUR
@@ -157,6 +189,7 @@ export const useProductStore = defineStore('product', () => {
     currentProduct,
     categories,
     collections,
+    categoryWithProducts, // nouveau
     // Status
     isLoading,
     error,
@@ -164,11 +197,15 @@ export const useProductStore = defineStore('product', () => {
     categoriesError,
     collectionsLoading,
     collectionsError,
+    categoryProductsLoading, // nouveau
+    categoryProductsError,   // nouveau
     // Actions
     fetchProducts,
     fetchProductBySlug,
     fetchCategories,
     fetchCollections,
+    fetchCategoryWithProducts,
+    fetchProductsByCategories, // alias pour compatibilité
     // Getters
     inStockProducts
   }

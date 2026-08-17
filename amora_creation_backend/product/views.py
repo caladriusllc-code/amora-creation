@@ -1,16 +1,8 @@
-from django.shortcuts import render
-from .models import (
-    Category, 
-    Collection, 
-    Size, 
-    Color, 
-    Product, 
-    ProductVariant,
-    ProductImage
-)
 from rest_framework import viewsets
-from .serializers import CategorySerializer, CollectionSerializer, ProductSerializer
-
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import Category, Collection, Product
+from .serializers import CategorySerializer, CollectionSerializer, ProductSerializer, CategoryDetailSerializer
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -39,3 +31,26 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = ProductSerializer
     lookup_field = 'slug'  # Récupère un produit via son slug (ex: /api/products/robe-d-ete/) au lieu de son ID
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    @action(detail=True, methods=['get'], url_path='products')
+    def products(self, request, pk=None):
+        """
+        Retrieve a single category along with its products.
+        URL: /api/categories/<id>/products/  or /api/categories/<slug>/products/ if you set lookup_field.
+        """
+        category = self.get_object()  # uses the default lookup field (pk/id)
+        # Prefetch products and their nested relations to avoid N+1 queries
+        category = Category.objects.prefetch_related(
+            'products__images',
+            'products__variants',
+            'products__variants__size',
+            'products__variants__color',
+            'products__category',
+            'products__collection'
+        ).get(pk=category.pk)
+        serializer = CategoryDetailSerializer(category)
+        return Response(serializer.data)

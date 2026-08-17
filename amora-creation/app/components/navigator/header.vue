@@ -18,10 +18,11 @@
       <div class="logo" @click="()=>{router.push('/')}">Amora.</div>
       
       <ul class="nav-links">
-        <li class="active"><NuxtLink to="/Collection">Collection</NuxtLink></li>
-        <li><NuxtLink to="/categories">Categories</NuxtLink></li>
-        <li><NuxtLink to="/tendances">Tendances</NuxtLink></li>
-        <li><NuxtLink to="/soldes">Soldes</NuxtLink></li>
+        <li><NuxtLink to="/" exact-active-class="active-link">Accueil</NuxtLink></li>
+        <li><NuxtLink to="/Collection" exact-active-class="active-link">Collection</NuxtLink></li>
+        <li><NuxtLink to="/categories" exact-active-class="active-link">Categories</NuxtLink></li>
+        <li><NuxtLink to="/tendances" exact-active-class="active-link">Tendances</NuxtLink></li>
+        <li><NuxtLink to="/soldes" exact-active-class="active-link">Soldes</NuxtLink></li>
       </ul>
 
       <div class="nav-actions">
@@ -57,10 +58,10 @@
     <transition name="menu-slide">
       <div v-if="isMenuOpen" class="mobile-menu">
         <ul class="mobile-nav-links">
-          <li class="active" @click="closeMenu">Collection</li>
-          <li @click="closeMenu"><NuxtLink to="/categories">Categories</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/tendances">Tendances</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/soldes">Soldes</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/Collection" exact-active-class="active-link">Collection</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/categories" exact-active-class="active-link">Categories</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/tendances" exact-active-class="active-link">Tendances</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/soldes" exact-active-class="active-link">Soldes</NuxtLink></li>
         </ul>
       </div>
     </transition>
@@ -78,11 +79,10 @@ import BaseResearchInput from '../input/BaseResarchInput.vue';
 
 export default {
   components: { cartButton, BaseResearchInput },
-  // 1. AJOUT DE LA PROPRIÉTÉ THEME
   props: {
     theme: {
       type: String,
-      default: 'transparent', // Peut être 'transparent', 'light', ou 'dark'
+      default: 'transparent', // 'transparent', 'light', or 'dark'
     }
   },
 
@@ -175,7 +175,7 @@ export default {
   -webkit-backdrop-filter: none;
 }
 .header--transparent .logo,
-.header--transparent .nav-links li,
+.header--transparent .nav-links li a,
 .header--transparent .top-bar-link { color: #ffffff; }
 .header--transparent .hamburger span { background: #ffffff; }
 .header--transparent .mobile-search-toggle svg { stroke: #ffffff; }
@@ -189,9 +189,9 @@ export default {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 .header--solid .logo,
-.header--solid .nav-links li,
+.header--solid .nav-links li a,
 .theme--light .logo,
-.theme--light .nav-links li { color: #000000; }
+.theme--light .nav-links li a { color: #000000; }
 .header--solid .hamburger span,
 .theme--light .hamburger span { background: #000000; }
 .header--solid .mobile-search-toggle svg,
@@ -205,7 +205,7 @@ export default {
   box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.05);
 }
 .theme--dark .logo,
-.theme--dark .nav-links li { color: #ffffff; }
+.theme--dark .nav-links li a { color: #ffffff; }
 .theme--dark .hamburger span { background: #ffffff; }
 .theme--dark .mobile-search-toggle svg { stroke: #ffffff; }
 /* Inversion de la top bar pour le thème sombre */
@@ -245,7 +245,7 @@ export default {
 }
 
 .nav-links { display: flex; list-style: none; gap: 32px; font-size: 14px; text-transform: uppercase; font-weight: 600;}
-.nav-links li { transition: color 0.4s ease; cursor: pointer; }
+.nav-links li a { transition: color 0.4s ease; cursor: pointer; text-decoration: none; }
 .nav-actions { display: flex; align-items: center; gap: 20px; }
 
 /* Desktop Search */
@@ -285,6 +285,7 @@ export default {
 }
 .mobile-nav-links { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
 .mobile-nav-links li { font-size: 16px; font-weight: 500; text-transform: uppercase; color: #4b5563; padding: 8px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.mobile-nav-links li a { text-decoration: none; color: inherit; display: block; }
 
 /* Ajustements pour le thème dark sur le menu mobile */
 .theme--dark .mobile-search-dropdown,
@@ -319,6 +320,59 @@ export default {
 .menu-slide-leave-active { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .menu-slide-enter-from,
 .menu-slide-leave-to { opacity: 0; transform: translateY(-20px); }
+
+/* ===== ACTIVE LINK INDICATOR ===== */
+
+/* Base active-link style (underline) */
+.nav-links li a.active-link {
+  position: relative;
+  text-decoration: none;
+}
+.nav-links li a.active-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: currentColor;
+  transition: transform 0.3s ease;
+}
+
+/* Theme‑specific active link colors */
+.header--transparent .nav-links li a.active-link {
+  color: #ffffff;
+}
+.header--transparent .nav-links li a.active-link::after {
+  background-color: #ffffff;
+}
+
+.header--solid .nav-links li a.active-link,
+.theme--light .nav-links li a.active-link {
+  color: #000000;
+}
+.header--solid .nav-links li a.active-link::after,
+.theme--light .nav-links li a.active-link::after {
+  background-color: #000000;
+}
+
+.theme--dark .nav-links li a.active-link {
+  color: #ffffff;
+}
+.theme--dark .nav-links li a.active-link::after {
+  background-color: #ffffff;
+}
+
+/* Mobile menu active link */
+.mobile-nav-links li a.active-link {
+  color: #000000 !important;
+  font-weight: 700;
+  border-bottom: 2px solid #000000;
+}
+.theme--dark .mobile-nav-links li a.active-link {
+  color: #ffffff !important;
+  border-bottom-color: #ffffff;
+}
 
 /* ==== MEDIA QUERY MOBILE ==== */
 @media (max-width: 768px) {
