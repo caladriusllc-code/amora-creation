@@ -36,7 +36,7 @@ export default {
   props: {
     image: String,
     name: String,
-    price: Number,
+    price: Number| String,
     sale: Boolean,
     isLoading: Boolean,
   },
