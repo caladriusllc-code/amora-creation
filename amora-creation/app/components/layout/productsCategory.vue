@@ -22,6 +22,7 @@
           :title="category.name"
           class="card-reveal"
           :style="{ animationDelay: `${Math.min(index, 8) * 60}ms` }"
+          @click="handleCategory(category.id)"
         />
       </div>
     </Transition>
@@ -41,6 +42,7 @@
 
 <script lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useProductStore } from '../../stores/productStore';
 import productsCategory from '../cards/categoryCards.vue'
 import Skeleton from '../tools/skeleton.vue'
@@ -52,6 +54,9 @@ export default {
     Skeleton
   },
   setup() {
+
+    const router = useRouter();
+
     const productStore = useProductStore()
 
     // 🌟 1. On force le chargement initial à TRUE dès la première milliseconde
@@ -62,6 +67,57 @@ export default {
       // Si on initialise OU si Pinia est en train de chercher = Skeleton affiché !
       return isInitializing.value || productStore.categoriesLoading;
     });
+
+    function handleCategory(id: number | string | undefined) {
+      if (id === undefined || id === null) return;
+
+      router.push(`/categories/${id}`);
+    }
+
+    // Watcher pour initialiser la barre de défilement une fois le skeleton parti
+    watch(isLoading, async (isNowLoading) => {
+      if (!isNowLoading) {
+        await nextTick();
+        updateScrollbar();
+        
+        if (typeof ResizeObserver !== 'undefined' && cardsContainer.value) {
+          if (resizeObserver) resizeObserver.disconnect();
+          resizeObserver = new ResizeObserver(updateScrollbar);
+          resizeObserver.observe(cardsContainer.value);
+        }
+      }
+    });
+
+    
+
+    // Lifecycle
+    onMounted(async () => {
+      window.addEventListener('resize', updateScrollbar);
+      
+      // On lance la requête de l'API si le store est vide
+      if (productStore.categories.length === 0) {
+        // ⏱️ Durée minimale d'affichage du squelette pour éviter un flash trop rapide
+        const minDelay = new Promise(resolve => setTimeout(resolve, 300));
+        await Promise.all([productStore.fetchCategories(), minDelay]);
+      }
+      
+      // 🌟 3. Une fois que TOUT est terminé, on retire l'état d'initialisation !
+      isInitializing.value = false;
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', updateScrollbar);
+      if (resizeObserver) resizeObserver.disconnect();
+      stopDrag();
+    });
+
+    // ====================================================================================================================== //
+
+    const getCategoryImage = (category: any) => {
+      if (category.image) return category.image;
+      if (category.slug) return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(category.slug)}&w=900&q=80`;
+      return 'https://images.unsplash.com/featured/?fashion&w=900&q=80';
+    }
 
     // Refs pour le défilement
     const cardsContainer = ref<HTMLElement | null>(null);
@@ -94,20 +150,6 @@ export default {
       const progress = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
       thumbLeft.value = progress * (100 - calculatedWidth);
     };
-
-    // Watcher pour initialiser la barre de défilement une fois le skeleton parti
-    watch(isLoading, async (isNowLoading) => {
-      if (!isNowLoading) {
-        await nextTick();
-        updateScrollbar();
-        
-        if (typeof ResizeObserver !== 'undefined' && cardsContainer.value) {
-          if (resizeObserver) resizeObserver.disconnect();
-          resizeObserver = new ResizeObserver(updateScrollbar);
-          resizeObserver.observe(cardsContainer.value);
-        }
-      }
-    });
 
     // Boutons de navigation
     const scrollPrev = () => {
@@ -187,36 +229,11 @@ export default {
       window.addEventListener('touchend', stopDrag);
     };
 
-    // Lifecycle
-    onMounted(async () => {
-      window.addEventListener('resize', updateScrollbar);
-      
-      // On lance la requête de l'API si le store est vide
-      if (productStore.categories.length === 0) {
-        // ⏱️ Durée minimale d'affichage du squelette pour éviter un flash trop rapide
-        const minDelay = new Promise(resolve => setTimeout(resolve, 300));
-        await Promise.all([productStore.fetchCategories(), minDelay]);
-      }
-      
-      // 🌟 3. Une fois que TOUT est terminé, on retire l'état d'initialisation !
-      isInitializing.value = false;
-    });
-
-    onUnmounted(() => {
-      window.removeEventListener('resize', updateScrollbar);
-      if (resizeObserver) resizeObserver.disconnect();
-      stopDrag();
-    });
-
-    const getCategoryImage = (category: any) => {
-      if (category.image) return category.image;
-      if (category.slug) return `https://images.unsplash.com/featured/?fashion,${encodeURIComponent(category.slug)}&w=900&q=80`;
-      return 'https://images.unsplash.com/featured/?fashion&w=900&q=80';
-    }
-
     return { 
+      router,
       productStore,
       isLoading,
+      handleCategory,
       cardsContainer,
       trackRef,
       thumbWidth,

@@ -129,7 +129,7 @@ const getPlaceholderImage = (name: string) => {
 .category-detail-section {
   padding: 4rem 1.5rem;
   background-color: #f9fafb;
-  min-height: 80vh;
+  min-height: 100vh;
 }
 
 .category-container {

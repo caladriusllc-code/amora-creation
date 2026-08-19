@@ -1,5 +1,5 @@
 <template>
-    <div class="category-card">
+    <div class="category-card" @click="$emit('click')">
         <div class="image-wrapper">
           <img :src="image" :alt="title" class="category-image" />
           <div class="overlay"></div>
@@ -23,6 +23,7 @@
 <script>
 export default {
     name: 'categoryCards',
+    emits: ['click'],
     props: {
         image: {
             type: String,

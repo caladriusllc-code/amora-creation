@@ -1,6 +1,6 @@
 <template>
-    <div class="main-layout">
-        <Mainheader/>
+    <div class="page-container">
+        <Mainheader theme="black"/>
         <categoryWithProducts />
         <FooterSection/>
     </div>
@@ -32,6 +32,9 @@ export default {
 }
 </script>
 
-<style>
-
+<style scoped>
+.page-container {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
 </style>
