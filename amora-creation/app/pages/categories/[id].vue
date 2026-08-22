@@ -1,6 +1,6 @@
 <template>
     <div class="page-container">
-        <Mainheader theme="black"/>
+        <Mainheader theme="dark"/>
         <categoryWithProducts />
         <FooterSection/>
     </div>
@@ -17,7 +17,7 @@ export default {
     components:{
         Mainheader,
         FooterSection,
-        categoryWithProducts
+        categoryWithProducts,
     },
 
     setup(){

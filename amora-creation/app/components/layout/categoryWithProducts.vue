@@ -1,38 +1,63 @@
 <template>
   <section class="category-detail-section w-full">
-    <div v-if="productStore.categoryProductsLoading" class="status-state loading-state">
+    <!-- Le composant est maintenant en PascalCase (Vue Style Guide) -->
+    <CategoryList
+      :categories="categories"
+      :activeCategory="activeCategory"
+      @update:activeCategory="setActive"
+    />
+    <!-- État : Chargement -->
+    <div
+      v-if="productStore.categoryProductsLoading"
+      class="status-state loading-state"
+      role="status"
+      aria-live="polite"
+    >
       <div class="spinner"></div>
       <p>Chargement de la collection...</p>
     </div>
 
-    <div v-else-if="productStore.categoryProductsError" class="status-state error-state">
+    <!-- État : Erreur -->
+    <div
+      v-else-if="productStore.categoryProductsError"
+      class="status-state error-state"
+      role="alert"
+    >
       <p>⚠️ {{ productStore.categoryProductsError }}</p>
     </div>
 
+    <!-- État : Succès -->
     <div v-else-if="productStore.categoryWithProducts" class="category-container">
-      
-      <div class="section-header">
-        <h2 class="section-title">{{ productStore.categoryWithProducts.name }}</h2>
-        <p class="section-subtitle">{{ productStore.categoryWithProducts.description || 'Découvrez tous les articles de cette catégorie.' }}</p>
-      </div>
 
-      <div v-if="productStore.categoryWithProducts.products.length === 0" class="empty-state">
+      <header class="section-header">
+        <h2 class="section-title">{{ productStore.categoryWithProducts.name }}</h2>
+        <p class="section-subtitle">
+          {{ productStore.categoryWithProducts.description || 'Découvrez tous les articles de cette catégorie.' }}
+        </p>
+      </header>
+
+      <!-- État : Vide -->
+      <div
+        v-if="productStore.categoryWithProducts.products.length === 0"
+        class="empty-state"
+      >
         <p>Aucun produit disponible dans cette catégorie pour le moment.</p>
       </div>
 
+      <!-- Grille de produits -->
       <div v-else class="products-grid">
         <ProductCards
-            v-for="product in productStore.categoryWithProducts.products"
-            :key="product.id"
-            class="reveal-item"
-            v-scroll-reveal
-            :image="getProductImage(product)"
-            :name="product.name"
-            :price="product.price"
-            :sale="product.discount_price ? true : false"
-            :isLoading="loadingProductIds.has(product.id)"
-            @addToCart="addToCart(product.id)"
-            @goToProductDetail="goToProductDetail(product.slug)"
+          v-for="product in productStore.categoryWithProducts.products"
+          :key="product.id"
+          class="reveal-item"
+          v-scroll-reveal
+          :image="getProductImage(product)"
+          :name="product.name"
+          :price="product.price"
+          :sale="!!product.discount_price"
+          :isLoading="loadingProductIds.has(product.id)"
+          @addToCart="addToCart(product.id)"
+          @goToProductDetail="goToProductDetail(product.slug)"
         />
       </div>
 
@@ -41,60 +66,85 @@
 </template>
 
 <script setup lang="ts">
+// 1. Imports
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useProductStore } from '../../stores/productStore'
-// Optionnel: Importe ton store panier si tu l'utilises ici pour ajouter l'article
-// import { useCartStore } from '../../stores/cartStore'
+import { useRuntimeConfig } from '#app'
 
+// Stores
+import { useProductStore } from '../../stores/productStore'
+
+// Composants
+import CategoryList from '../tools/categoryList.vue'
 import ProductCards from '../cards/productCards.vue'
 
+// 2. Initialisation
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
 const runtimeConfig = useRuntimeConfig()
 const apiBaseUrl = (runtimeConfig.public.apiBase as string) || 'http://localhost:8000'
-// const cartStore = useCartStore()
 
-// Un Set pour suivre de manière réactive quels produits sont en cours d'ajout au panier
+// 3. États réactifs
 const loadingProductIds = ref(new Set<number | string>())
 
+// NOUVEAU : État de la catégorie active (initialisé avec l'URL ou une valeur par défaut)
+const activeCategory = ref<string>((route.params.id as string) || 'robes')
+
+// NOUVEAU : Liste des catégories à envoyer à l'enfant.
+// Note : Si tu as ces catégories dans ton store, tu peux faire `const categories = computed(() => productStore.categories)`
+const categories = ref([
+  { id: 'robes', name: 'Robes' },
+  { id: 'pantalons', name: 'Pantalons' },
+  { id: 'chaussures', name: 'Chaussures' },
+  { id: 'accessoires', name: 'Accessoires' }
+])
+
+// 4. Cycle de vie
 onMounted(async () => {
   const routeId = route.params.id as string
   if (routeId) {
+    activeCategory.value = routeId // S'assure que le bouton actif correspond à l'URL
     await productStore.fetchCategoryWithProducts(routeId)
   }
 })
 
-// Fonction pour aller sur la page détail du produit
-const goToProductDetail = (slug: string) => {
-  // ⚠️ Assure-toi que la route vers les détails correspond à ce nom dans ton router
-  router.push(`/produits/${slug}`) 
+// 5. Méthodes (Actions)
+
+// NOUVEAU : Gère le clic sur une catégorie depuis l'enfant
+const setActive = async (categoryId: string) => {
+  if (activeCategory.value === categoryId) return // Évite de recharger si on clique sur la même catégorie
+
+  activeCategory.value = categoryId
+
+  // Met à jour l'URL silencieusement pour que l'utilisateur puisse partager le lien
+  // (Assure-toi que la structure de l'URL correspond à ton routeur, ex: /categories/robes)
+  router.push({ params: { id: categoryId } })
+
+  // Déclenche le chargement des nouveaux produits dans le store
+  await productStore.fetchCategoryWithProducts(categoryId)
 }
 
-// Fonction pour ajouter au panier
+const goToProductDetail = (slug: string) => {
+  router.push(`/produits/${slug}`)
+}
+
 const addToCart = async (productId: number | string) => {
-  // On active le chargement pour CE produit spécifique
   loadingProductIds.value.add(productId)
-  
   try {
-    // Appel de ton store cart (à décommenter quand tu es prêt)
-    // await cartStore.add(productId)
-    
-    // Simulation du temps de réseau pour voir l'effet de chargement (à retirer ensuite)
     await new Promise(resolve => setTimeout(resolve, 800))
     console.log(`Produit ${productId} ajouté au panier !`)
   } catch (error) {
     console.error("Erreur lors de l'ajout au panier", error)
   } finally {
-    // On désactive le chargement une fois fini
     loadingProductIds.value.delete(productId)
   }
 }
 
-const normalizeImageUrl = (url?: string) => {
+// 6. Méthodes (Utilitaires de formatage)
+const normalizeImageUrl = (url?: string): string => {
   if (!url) return ''
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+  if (/^(http|https|data):/.test(url)) {
     return url
   }
   if (url.startsWith('/')) {
@@ -103,7 +153,7 @@ const normalizeImageUrl = (url?: string) => {
   return url
 }
 
-const getProductImage = (product: any) => {
+const getProductImage = (product: any): string => {
   const directImage = product?.image
   const firstImage = Array.isArray(product?.images)
     ? product.images[0]?.image || product.images[0]
@@ -115,8 +165,7 @@ const getProductImage = (product: any) => {
   return imageUrl || getPlaceholderImage(product?.name || 'fashion')
 }
 
-// Fonction pour générer une image par défaut (fallback)
-const getPlaceholderImage = (name: string) => {
+const getPlaceholderImage = (name: string): string => {
   const encoded = encodeURIComponent(name || 'fashion')
   return `https://images.unsplash.com/featured/?fashion,${encoded}&w=600&q=80`
 }
@@ -124,16 +173,30 @@ const getPlaceholderImage = (name: string) => {
 
 <style scoped>
 /* =========================================
-   VARIABLES & CONTENEUR GLOBAL
+   VARIABLES CSS (Thème de la section)
    ========================================= */
 .category-detail-section {
-  padding: 4rem 1.5rem;
-  background-color: #f9fafb;
+  /* Couleurs */
+  --bg-section: #f9fafb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --error-color: #ef4444;
+  --spinner-color: #111827;
+  --spinner-track: #e5e7eb;
+
+  /* Espacements et Dimensions */
+  --spacing-base: 1rem;
+  --section-padding: 8rem 1rem 1rem 1rem;
+  --max-width: 1200px;
+  --radius-lg: 16px;
+
+  padding: var(--section-padding);
+  background-color: var(--bg-section);
   min-height: 100vh;
 }
 
 .category-container {
-  max-width: 1200px;
+  max-width: var(--max-width);
   margin: 0 auto;
 }
 
@@ -142,19 +205,19 @@ const getPlaceholderImage = (name: string) => {
    ========================================= */
 .section-header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: calc(var(--spacing-base) * 4);
 }
 
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(2rem, 4vw, 2.5rem); /* Taille responsive fluide */
   font-weight: 700;
-  color: #111827;
-  margin-bottom: 1rem;
+  color: var(--text-main);
+  margin-bottom: var(--spacing-base);
   letter-spacing: -0.02em;
 }
 
 .section-subtitle {
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 1.125rem;
   max-width: 600px;
   margin: 0 auto;
@@ -171,30 +234,37 @@ const getPlaceholderImage = (name: string) => {
   justify-content: center;
   min-height: 40vh;
   text-align: center;
-  color: #4b5563;
+  color: var(--text-muted);
   font-size: 1.125rem;
 }
 
-.error-state { color: #ef4444; }
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: #6b7280;
-  background: white;
-  border-radius: 16px;
-  border: 1px dashed #d1d5db;
+.error-state {
+  color: var(--error-color);
 }
 
+.empty-state {
+  text-align: center;
+  padding: calc(var(--spacing-base) * 4) calc(var(--spacing-base) * 2);
+  color: var(--text-muted);
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--spinner-track);
+}
+
+/* Spinner d'attente */
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #111827;
+  border: 4px solid var(--spinner-track);
+  border-top-color: var(--spinner-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-base);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 /* =========================================
    GRILLE DES PRODUITS
@@ -202,14 +272,11 @@ const getPlaceholderImage = (name: string) => {
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 2rem;
-  /* Optionnel : centre les cartes dans leur colonne si on est sur un grand écran */
-  justify-items: center; 
+  gap: calc(var(--spacing-base) * 2);
+  justify-items: center;
 }
 
-/* On force l'enfant (qui a une width fixe de 280px par défaut)
-  à prendre 100% de sa colonne pour rester parfaitement responsive
-*/
+/* On cible le composant enfant sans rompre le scope */
 .products-grid :deep(.pro-card) {
   width: 100%;
   max-width: 300px;

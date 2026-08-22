@@ -82,10 +82,10 @@ export default {
   background-color: #f3f3f3;
   border-radius: 4px;
   margin-bottom: 16px;
-  
+
   /* Masquage strict pour que l'image ne déborde pas au zoom */
-  overflow: hidden; 
-  
+  overflow: hidden;
+
   /* Isolation 3D pour éviter les conflits avec l'animation v-scroll-reveal du parent */
   transform: translateZ(0);
   -webkit-mask-image: -webkit-radial-gradient(white, black);
@@ -111,18 +111,18 @@ export default {
   height: 100%;
   object-fit: cover;
   display: block;
-  
+
   /* Préparation matérielle pour une animation fluide */
   will-change: transform;
   backface-visibility: hidden;
-  
+
   /* Transition forcée (!important aide si Tailwind est utilisé) */
   transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
 
 /* LE DÉCLENCHEUR : Uniquement quand on survole le bloc de l'image */
 .image-wrapper:hover .product-image {
-  transform: scale(1.1) !important; 
+  transform: scale(1.1) !important;
 }
 
 .product-info {
