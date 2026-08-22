@@ -4,7 +4,7 @@
       <h2 class="section-title">Catégories de produits</h2>
       <p class="section-subtitle">Découvrez toutes nos catégories de vêtements</p>
     </div>
-    
+
     <Transition name="fade" mode="out-in">
       <div v-if="isLoading" key="skeleton" class="cards-layout">
         <Skeleton v-for="n in 6" :key="`sk-${n}`" :show-price="false" />
@@ -22,15 +22,15 @@
           :title="category.name"
           class="card-reveal"
           :style="{ animationDelay: `${Math.min(index, 8) * 60}ms` }"
-          @click="handleCategory(category.id)"
+          @click="handleCategory(category.slug)"
         />
       </div>
     </Transition>
 
     <div v-show="showScrollbar && !isLoading" class="custom-scrollbar-container">
       <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
-        <div 
-          class="scrollbar-thumb" 
+        <div
+          class="scrollbar-thumb"
           :style="{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }"
           @mousedown.prevent="startDrag"
           @touchstart="startDrag"
@@ -79,7 +79,7 @@ export default {
       if (!isNowLoading) {
         await nextTick();
         updateScrollbar();
-        
+
         if (typeof ResizeObserver !== 'undefined' && cardsContainer.value) {
           if (resizeObserver) resizeObserver.disconnect();
           resizeObserver = new ResizeObserver(updateScrollbar);
@@ -88,19 +88,19 @@ export default {
       }
     });
 
-    
+
 
     // Lifecycle
     onMounted(async () => {
       window.addEventListener('resize', updateScrollbar);
-      
+
       // On lance la requête de l'API si le store est vide
       if (productStore.categories.length === 0) {
         // ⏱️ Durée minimale d'affichage du squelette pour éviter un flash trop rapide
         const minDelay = new Promise(resolve => setTimeout(resolve, 300));
         await Promise.all([productStore.fetchCategories(), minDelay]);
       }
-      
+
       // 🌟 3. Une fois que TOUT est terminé, on retire l'état d'initialisation !
       isInitializing.value = false;
     });
@@ -122,7 +122,7 @@ export default {
     // Refs pour le défilement
     const cardsContainer = ref<HTMLElement | null>(null);
     const trackRef = ref<HTMLElement | null>(null);
-    
+
     // Scrollbar state
     const thumbWidth = ref(0);
     const thumbLeft = ref(0);
@@ -134,18 +134,18 @@ export default {
       if (!container) return;
 
       const { scrollLeft, scrollWidth, clientWidth } = container;
-      
+
       if (scrollWidth <= clientWidth) {
         showScrollbar.value = false;
         return;
       }
-      
+
       showScrollbar.value = true;
-      
+
       const visibleRatio = clientWidth / scrollWidth;
       const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100));
       thumbWidth.value = calculatedWidth;
-      
+
       const maxScrollLeft = scrollWidth - clientWidth;
       const progress = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
       thumbLeft.value = progress * (100 - calculatedWidth);
@@ -171,15 +171,15 @@ export default {
       const track = trackRef.value;
       const container = cardsContainer.value;
       if (!track || !container) return;
-      
+
       const rect = track.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const clickRatio = clickX / rect.width;
-      
+
       const maxScrollLeft = container.scrollWidth - container.clientWidth;
       let targetScrollLeft = (clickRatio * container.scrollWidth) - (container.clientWidth / 2);
       targetScrollLeft = Math.max(0, Math.min(maxScrollLeft, targetScrollLeft));
-      
+
       container.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
     };
 
@@ -190,19 +190,19 @@ export default {
 
     const handleDrag = (e: MouseEvent | TouchEvent) => {
       if (!isDragging || !cardsContainer.value || !trackRef.value) return;
-      
+
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const deltaX = clientX - startX;
-      
+
       const trackWidth = trackRef.value.clientWidth;
       const container = cardsContainer.value;
       const maxScrollLeft = container.scrollWidth - container.clientWidth;
-      
+
       const thumbWidthPx = (thumbWidth.value / 100) * trackWidth;
       const thumbScrollRange = trackWidth - thumbWidthPx;
-      
+
       if (thumbScrollRange <= 0) return;
-      
+
       const ratio = deltaX / thumbScrollRange;
       container.scrollLeft = startScrollLeft + ratio * maxScrollLeft;
     };
@@ -222,14 +222,14 @@ export default {
       if (cardsContainer.value) {
         startScrollLeft = cardsContainer.value.scrollLeft;
       }
-      
+
       window.addEventListener('mousemove', handleDrag);
       window.addEventListener('touchmove', handleDrag, { passive: true });
       window.addEventListener('mouseup', stopDrag);
       window.addEventListener('touchend', stopDrag);
     };
 
-    return { 
+    return {
       router,
       productStore,
       isLoading,

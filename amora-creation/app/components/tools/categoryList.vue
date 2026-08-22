@@ -2,9 +2,9 @@
   <div class="category-list">
     <button
       v-for="category in categories"
-      :key="category.id"
-      :class="{ active: activeCategory === category.id }"
-      @click="setActive(category.id)"
+      :key="category.id || category.slug"
+      :class="{ active: activeCategory === (category.slug || category.id) }"
+      @click="setActive(category.slug || category.id)"
     >
       {{ category.name }}
     </button>
@@ -12,30 +12,31 @@
 </template>
 
 <script setup lang="ts">
-// Plus besoin de 'ref', on utilise defineProps et defineEmits
-import { defineProps, defineEmits } from 'vue'
 
 // 1. Définition du type pour nos catégories
 interface Category {
-  id: string
+  id?: number | string
   name: string
+  slug?: string
 }
 
 // 2. Déclaration des props reçues du parent
 defineProps<{
   categories: Category[]
-  activeCategory: string // L'ID de la catégorie actuellement sélectionnée
+  activeCategory: string | number // L'ID ou le slug de la catégorie actuellement sélectionnée
 }>()
 
 // 3. Déclaration de l'événement envoyé au parent
 const emit = defineEmits<{
-  (e: 'update:activeCategory', categoryId: string): void
+  (e: 'update:activeCategory', categoryId: string | number): void
 }>()
 
 // 4. Fonction déclenchée au clic
-const setActive = (categoryId: string) => {
+const setActive = (categorySlug: string | number | undefined) => {
   // On prévient le parent qu'une nouvelle catégorie a été choisie
-  emit('update:activeCategory', categoryId)
+  if (categorySlug !== undefined) {
+    emit('update:activeCategory', categorySlug)
+  }
 }
 </script>
 

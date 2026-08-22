@@ -70,7 +70,7 @@ export default {
 <style scoped>
 .pro-card {
   flex-shrink: 0;
-  width: 280px;
+  width: 300px;
   scroll-snap-align: start;
   cursor: pointer;
   transition: transform 0.3s ease;
@@ -81,7 +81,7 @@ export default {
   position: relative;
   background-color: #f3f3f3;
   border-radius: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 
   /* Masquage strict pour que l'image ne déborde pas au zoom */
   overflow: hidden;
@@ -133,13 +133,13 @@ export default {
   font-weight: 700;
   color: #111827;
   margin: 0 0 4px 0;
-  font-size: 16px;
+  font-size: 17px;
 }
 
 .product-price {
   font-weight: 900;
   color: #111827;
-  font-size: 18px;
+  font-size: 20px;
   margin: 0;
 }
 </style>

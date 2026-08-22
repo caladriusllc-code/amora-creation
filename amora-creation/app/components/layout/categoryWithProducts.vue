@@ -50,7 +50,6 @@
           v-for="product in productStore.categoryWithProducts.products"
           :key="product.id"
           class="reveal-item"
-          v-scroll-reveal
           :image="getProductImage(product)"
           :name="product.name"
           :price="product.price"
@@ -67,12 +66,13 @@
 
 <script setup lang="ts">
 // 1. Imports
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRuntimeConfig } from '#app'
 
 // Stores
 import { useProductStore } from '../../stores/productStore'
+import { useCartStore } from '~/stores/cartStore'
 
 // Composants
 import CategoryList from '../tools/categoryList.vue'
@@ -82,6 +82,7 @@ import ProductCards from '../cards/productCards.vue'
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
+const cartStore = useCartStore()
 const runtimeConfig = useRuntimeConfig()
 const apiBaseUrl = (runtimeConfig.public.apiBase as string) || 'http://localhost:8000'
 
@@ -89,19 +90,19 @@ const apiBaseUrl = (runtimeConfig.public.apiBase as string) || 'http://localhost
 const loadingProductIds = ref(new Set<number | string>())
 
 // NOUVEAU : État de la catégorie active (initialisé avec l'URL ou une valeur par défaut)
-const activeCategory = ref<string>((route.params.id as string) || 'robes')
+const activeCategory = ref<string | number>((route.params.id as string) || 'robes')
 
 // NOUVEAU : Liste des catégories à envoyer à l'enfant.
 // Note : Si tu as ces catégories dans ton store, tu peux faire `const categories = computed(() => productStore.categories)`
-const categories = ref([
-  { id: 'robes', name: 'Robes' },
-  { id: 'pantalons', name: 'Pantalons' },
-  { id: 'chaussures', name: 'Chaussures' },
-  { id: 'accessoires', name: 'Accessoires' }
-])
+const categories = computed(() => productStore.categories)
 
 // 4. Cycle de vie
 onMounted(async () => {
+  // Charger les catégories si le store est vide
+  if (productStore.categories.length === 0) {
+    await productStore.fetchCategories()
+  }
+  
   const routeId = route.params.id as string
   if (routeId) {
     activeCategory.value = routeId // S'assure que le bouton actif correspond à l'URL
@@ -112,14 +113,14 @@ onMounted(async () => {
 // 5. Méthodes (Actions)
 
 // NOUVEAU : Gère le clic sur une catégorie depuis l'enfant
-const setActive = async (categoryId: string) => {
+const setActive = async (categoryId: string | number) => {
   if (activeCategory.value === categoryId) return // Évite de recharger si on clique sur la même catégorie
 
   activeCategory.value = categoryId
 
   // Met à jour l'URL silencieusement pour que l'utilisateur puisse partager le lien
   // (Assure-toi que la structure de l'URL correspond à ton routeur, ex: /categories/robes)
-  router.push({ params: { id: categoryId } })
+  router.push({ params: { id: String(categoryId) } })
 
   // Déclenche le chargement des nouveaux produits dans le store
   await productStore.fetchCategoryWithProducts(categoryId)
@@ -130,14 +131,18 @@ const goToProductDetail = (slug: string) => {
 }
 
 const addToCart = async (productId: number | string) => {
-  loadingProductIds.value.add(productId)
+  const nextLoadingIds = new Set(loadingProductIds.value)
+  nextLoadingIds.add(productId)
+  loadingProductIds.value = nextLoadingIds
   try {
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await cartStore.addToCart(productId)
     console.log(`Produit ${productId} ajouté au panier !`)
   } catch (error) {
     console.error("Erreur lors de l'ajout au panier", error)
   } finally {
-    loadingProductIds.value.delete(productId)
+    const nextLoadingIdsAfter = new Set(loadingProductIds.value);
+    nextLoadingIdsAfter.delete(productId);
+    loadingProductIds.value = nextLoadingIdsAfter;
   }
 }
 

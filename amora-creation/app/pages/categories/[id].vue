@@ -1,8 +1,9 @@
 <template>
     <div class="page-container">
-        <Mainheader theme="dark"/>
+        <Mainheader theme="dark" @toggle-cart="toggleCart"/>
         <categoryWithProducts />
         <FooterSection/>
+        <cartModale :isOpen="isCartOpen" @close="toggleCart"/>
     </div>
 </template>
 
@@ -12,20 +13,30 @@ import { useRoute } from 'vue-router';
 import Mainheader from '../../components/navigator/header.vue'
 import categoryWithProducts from '~/components/layout/categoryWithProducts.vue';
 import FooterSection from '~/components/layout/footerSection.vue';
+import cartModale from '~/components/modale/cartModale.vue'
+
 export default {
 
     components:{
         Mainheader,
         FooterSection,
         categoryWithProducts,
+        cartModale
     },
 
     setup(){
 
         const route = useRoute();
+        const isCartOpen = ref<boolean>(false);
+
+        function toggleCart() {
+            isCartOpen.value = !isCartOpen.value;
+        }
 
         return{
             route,
+            isCartOpen,
+            toggleCart
         }
     }
 
