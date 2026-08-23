@@ -1,9 +1,7 @@
 <template>
   <div class="page-container">
-    <Mainheader @toggle-cart="toggleCart" />
-    <main>
-      <collectionSection />
-    </main>
+    <Mainheader theme="dark" @toggle-cart="toggleCart" />
+    <collectionWithProducts />
     <FooterSection />
     <cartModale :isOpen="isCartOpen" @close="toggleCart" />
   </div>
@@ -12,7 +10,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Mainheader from '../../components/navigator/header.vue'
-import collectionSection from '../../components/layout/collectionSection.vue'
+import collectionWithProducts from '../../components/layout/collectionWithProducts.vue'
 import FooterSection from '../../components/layout/footerSection.vue'
 import cartModale from '../../components/modale/cartModale.vue'
 

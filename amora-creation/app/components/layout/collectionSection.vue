@@ -14,11 +14,17 @@
     </div>
 
     <div v-else class="collections-grid">
-      <article v-for="collection in productStore.collections" :key="collection.id" class="collection-card">
+      <article
+        v-for="collection in productStore.collections"
+        :key="collection.id"
+        class="collection-card"
+        @click="goToCollection(collection.slug)"
+      >
         <div class="collection-image" :style="{ backgroundImage: `url(${getCollectionImage(collection)})` }" />
         <div class="collection-content">
           <h3>{{ collection.name }}</h3>
           <p>{{ collection.description || 'Collection saisonnière à découvrir.' }}</p>
+          <button type="button" class="collection-button">Voir la collection</button>
         </div>
       </article>
     </div>
@@ -27,9 +33,11 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProductStore } from '../../stores/productStore'
 
 const productStore = useProductStore()
+const router = useRouter()
 
 onMounted(async () => {
   if (!productStore.collections.length) {
@@ -37,24 +45,21 @@ onMounted(async () => {
   }
 })
 
-// On garde ta fonction placeholder comme solution de secours (fallback)
+const goToCollection = (slug: string) => {
+  router.push(`/collection/${slug}`)
+}
+
 const placeholderImage = (slug: string) => {
   const encoded = encodeURIComponent(slug || 'collection')
   return `https://images.unsplash.com/featured/?fashion,${encoded}&w=900&q=80`
 }
 
-// ✨ Nouvelle fonction pour gérer l'affichage de l'image ✨
 const getCollectionImage = (collection: any) => {
-  // Si le backend Django a renvoyé une image (collection.image n'est pas null)
   if (collection.image) {
-    // Si Django renvoie une URL relative (ex: "/media/collections/mon_image.jpg")
-    // et que ton frontend n'est pas sur le même port, tu devras peut-être concaténer 
-    // l'URL de base de ton backend. Ex: return `http://localhost:8000${collection.image}`
-    return collection.image;
+    return collection.image
   }
-  
-  // Si aucune image n'a été ajoutée dans l'admin Django, on affiche le placeholder
-  return placeholderImage(collection.slug);
+
+  return placeholderImage(collection.slug)
 }
 </script>
 
@@ -103,6 +108,13 @@ const getCollectionImage = (collection: any) => {
   display: flex;
   flex-direction: column;
   min-height: 320px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.collection-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12);
 }
 
 .collection-image {
@@ -129,5 +141,17 @@ const getCollectionImage = (collection: any) => {
   color: #4b5563;
   line-height: 1.6;
   margin: 0;
+}
+
+.collection-button {
+  margin-top: 0.25rem;
+  align-self: flex-start;
+  border: none;
+  background: #111827;
+  color: white;
+  border-radius: 999px;
+  padding: 0.7rem 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 </style>

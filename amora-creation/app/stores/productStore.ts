@@ -2,10 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useNuxtApp } from '#app'
 
-// ==========================
-// 📚 INTERFACES (Typage)
-// ==========================
-
 export interface Category {
   id?: number
   name: string
@@ -24,6 +20,10 @@ export interface Collection {
   slug: string
   description?: string
   image?: string
+}
+
+export interface CollectionWithProducts extends Collection {
+  products: Product[]
 }
 
 export interface ProductImage {
@@ -46,7 +46,6 @@ export interface Product {
   is_in_stock?: boolean
 }
 
-// Typage générique pour les réponses paginées de Django REST Framework
 export interface PaginatedResponse<T> {
   count: number
   next: string | null
@@ -57,36 +56,26 @@ export interface PaginatedResponse<T> {
 export const useProductStore = defineStore('product', () => {
   const { $api } = useNuxtApp()
 
-  // ==========================
-  // 📦 STATE (État)
-  // ==========================
-  
-  // Données
   const products = ref<Product[]>([])
   const currentProduct = ref<Product | null>(null)
   const categories = ref<Category[]>([])
   const collections = ref<Collection[]>([])
-  
-  // Nouveau : catégorie avec ses produits
-  const categoryWithProducts = ref<CategoryWithProducts | null>(null)
 
-  // États de chargement
+  const categoryWithProducts = ref<CategoryWithProducts | null>(null)
+  const collectionWithProducts = ref<CollectionWithProducts | null>(null)
+
   const isLoading = ref<boolean>(false)
   const categoriesLoading = ref<boolean>(false)
   const collectionsLoading = ref<boolean>(false)
-  const categoryProductsLoading = ref<boolean>(false) // nouveau
+  const categoryProductsLoading = ref<boolean>(false)
+  const collectionProductsLoading = ref<boolean>(false)
 
-  // États d'erreur
   const error = ref<string | null>(null)
   const categoriesError = ref<string | null>(null)
   const collectionsError = ref<string | null>(null)
-  const categoryProductsError = ref<string | null>(null) // nouveau
+  const categoryProductsError = ref<string | null>(null)
+  const collectionProductsError = ref<string | null>(null)
 
-  // ==========================
-  // ⚙️ ACTIONS (Méthodes)
-  // ==========================
-
-  // Récupérer tous les produits
   const fetchProducts = async () => {
     isLoading.value = true
     error.value = null
@@ -95,13 +84,12 @@ export const useProductStore = defineStore('product', () => {
       products.value = 'results' in response ? response.results : response
     } catch (err: any) {
       error.value = err?.data?.message || "Impossible de charger les produits d'Amora création."
-      console.error("Erreur fetchProducts:", err)
+      console.error('Erreur fetchProducts:', err)
     } finally {
       isLoading.value = false
     }
   }
 
-  // Récupérer un seul produit via son slug
   const fetchProductBySlug = async (slug: string) => {
     isLoading.value = true
     error.value = null
@@ -109,14 +97,13 @@ export const useProductStore = defineStore('product', () => {
       const response = await $api<Product>(`/product/products/${slug}/`)
       currentProduct.value = response
     } catch (err: any) {
-      error.value = err?.data?.message || "Ce produit est introuvable."
+      error.value = err?.data?.message || 'Ce produit est introuvable.'
       console.error(`Erreur fetchProductBySlug (${slug}):`, err)
     } finally {
       isLoading.value = false
     }
   }
 
-  // Récupérer les catégories
   const fetchCategories = async () => {
     categoriesLoading.value = true
     categoriesError.value = null
@@ -124,14 +111,13 @@ export const useProductStore = defineStore('product', () => {
       const response = await $api<PaginatedResponse<Category> | Category[]>('/product/categories/')
       categories.value = 'results' in response ? response.results : response
     } catch (err: any) {
-      categoriesError.value = "Impossible de charger les catégories."
-      console.error("Erreur fetchCategories:", err)
+      categoriesError.value = 'Impossible de charger les catégories.'
+      console.error('Erreur fetchCategories:', err)
     } finally {
       categoriesLoading.value = false
     }
   }
 
-  // Récupérer les collections actives
   const fetchCollections = async () => {
     collectionsLoading.value = true
     collectionsError.value = null
@@ -139,74 +125,122 @@ export const useProductStore = defineStore('product', () => {
       const response = await $api<PaginatedResponse<Collection> | Collection[]>('/product/collections/')
       collections.value = 'results' in response ? response.results : response
     } catch (err: any) {
-      collectionsError.value = "Impossible de charger les collections."
-      console.error("Erreur fetchCollections:", err)
+      collectionsError.value = 'Impossible de charger les collections.'
+      console.error('Erreur fetchCollections:', err)
     } finally {
       collectionsLoading.value = false
     }
   }
 
-  /**
-   * Récupère une catégorie avec tous ses produits actifs.
-   * Utilise le endpoint personnalisé : /product/categories/{id}/products/
-   */
   const fetchCategoryWithProducts = async (id: string | number) => {
     categoryProductsLoading.value = true
     categoryProductsError.value = null
     categoryWithProducts.value = null
 
     try {
-      const response = await $api<CategoryWithProducts>(
-        `/product/categories/${id}/products/`,
-        { method: 'GET' }
-      )
+      const response = await $api<CategoryWithProducts>(`/product/categories/${id}/products/`, { method: 'GET' })
       categoryWithProducts.value = response
     } catch (err: any) {
-      categoryProductsError.value = err?.data?.message || "Impossible de charger cette catégorie et ses produits."
+      categoryProductsError.value = err?.data?.message || 'Impossible de charger cette catégorie et ses produits.'
       console.error(`Erreur fetchCategoryWithProducts (${id}):`, err)
     } finally {
       categoryProductsLoading.value = false
     }
   }
 
-  // ==========================
-  // 🔍 GETTERS (Propriétés calculées)
-  // ==========================
-  
+  const fetchCollectionWithProducts = async (identifier: string | number) => {
+    collectionProductsLoading.value = true
+    collectionProductsError.value = null
+    collectionWithProducts.value = null
+
+    try {
+      if (!products.value.length) {
+        await fetchProducts()
+      }
+
+      if (!collections.value.length) {
+        await fetchCollections()
+      }
+
+      const currentCollection = collections.value.find((collection) => {
+        return String(collection.id) === String(identifier) || collection.slug === String(identifier)
+      })
+
+      const matchedProducts = products.value.filter((product) => {
+        if (!product.collection) return false
+
+        if (typeof product.collection === 'object') {
+          return String(product.collection.id) === String(identifier) || product.collection.slug === String(identifier)
+        }
+
+        return String(product.collection) === String(identifier) || String(product.collection) === String(currentCollection?.id)
+      })
+
+      if (currentCollection) {
+        collectionWithProducts.value = {
+          ...currentCollection,
+          products: matchedProducts,
+        }
+        return
+      }
+
+      const fallbackCollection = products.value
+        .find((product) => typeof product.collection === 'object' && product.collection?.slug === String(identifier))
+        ?.collection as Collection | undefined
+
+      if (fallbackCollection) {
+        collectionWithProducts.value = {
+          ...fallbackCollection,
+          products: matchedProducts,
+        }
+        return
+      }
+
+      collectionWithProducts.value = {
+        id: Number(identifier) || undefined,
+        name: 'Collection',
+        slug: String(identifier),
+        description: 'Aucun produit n’a été trouvé pour cette collection.',
+        products: [],
+      }
+    } catch (err: any) {
+      collectionProductsError.value = err?.data?.message || 'Impossible de charger cette collection et ses produits.'
+      console.error(`Erreur fetchCollectionWithProducts (${identifier}):`, err)
+    } finally {
+      collectionProductsLoading.value = false
+    }
+  }
+
   const inStockProducts = computed<Product[]>(() => {
-    return products.value.filter(p => p.is_in_stock === true)
+    return products.value.filter((p) => p.is_in_stock === true)
   })
 
-  // Le nom original "fetchProductsByCategories" peut être conservé comme alias
   const fetchProductsByCategories = fetchCategoryWithProducts
 
-  // ==========================
-  // 🚀 RETOUR
-  // ==========================
   return {
-    // State
     products,
     currentProduct,
     categories,
     collections,
-    categoryWithProducts, // nouveau
-    // Status
+    categoryWithProducts,
+    collectionWithProducts,
     isLoading,
     error,
     categoriesLoading,
     categoriesError,
     collectionsLoading,
     collectionsError,
-    categoryProductsLoading, // nouveau
-    categoryProductsError,   // nouveau
-    // Actions
+    categoryProductsLoading,
+    categoryProductsError,
+    collectionProductsLoading,
+    collectionProductsError,
     fetchProducts,
     fetchProductBySlug,
     fetchCategories,
     fetchCollections,
     fetchCategoryWithProducts,
-    fetchProductsByCategories, // alias pour compatibilité
-    // Getters
-    inStockProducts
+    fetchCollectionWithProducts,
+    fetchProductsByCategories,
+    inStockProducts,
   }
 })

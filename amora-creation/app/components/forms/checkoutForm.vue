@@ -1,9 +1,9 @@
 <template>
     <form @submit.prevent="submitOrder" class="checkout-form">
         <h3>Informations de livraison et paiement</h3>
-        
+
         <div class="form-grid">
-            <BaseInput 
+            <BaseInput
                 v-model="formData.full_name"
                 label="Nom complet"
                 type="text"
@@ -12,7 +12,7 @@
                 @input="clearError('full_name')"
             />
 
-            <BaseInput 
+            <BaseInput
                 v-model="formData.email"
                 label="Adresse Email"
                 type="email"
@@ -21,7 +21,7 @@
                 @input="clearError('email')"
             />
 
-            <BaseInput 
+            <BaseInput
                 v-model="formData.phone_number"
                 label="Numéro de téléphone"
                 type="tel"
@@ -30,7 +30,7 @@
                 @input="clearError('phone_number')"
             />
 
-            <BaseInput 
+            <BaseInput
                 v-model="formData.city"
                 label="Ville"
                 type="text"
@@ -40,7 +40,7 @@
             />
 
             <div class="full-width">
-                <BaseInput 
+                <BaseInput
                     v-model="formData.shipping_address"
                     label="Adresse complète"
                     type="text"
@@ -51,13 +51,22 @@
             </div>
 
             <div class="full-width">
-                <BaseSelect 
+                <BaseSelect
                     v-model="formData.payment_method"
                     label="Sélectionner votre moyen de paiement"
                     :options="paymentOptions"
                     placeholder="Choisissez un moyen de paiement"
                     :errorMessage="errors.payment_method"
                     @change="clearError('payment_method')"
+                />
+            </div>
+
+            <!-- ⚡️ Ajout de la Checkbox CGV ici -->
+            <div class="full-width">
+                <BaseCheckboxe
+                    v-model="formData.accept_cgv"
+                    :errorMessage="errors.accept_cgv"
+                    @change="clearError('accept_cgv')"
                 />
             </div>
         </div>
@@ -70,16 +79,17 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseInput from '../input/BaseInput.vue' 
+import BaseInput from '../input/BaseInput.vue'
 import BaseSelect from '../input/BaseSelect.vue'
+import BaseCheckboxe from '../input/BaseCheckboxe.vue' // 👈 Correction de la faute de frappe ici
 import { useCookie } from '#app'
 
 import { useOrderStore } from '../../stores/orderStore'
-import { useCartStore } from '../../stores/cartStore' // 👈 Import du store gérant le paiement
+import { useCartStore } from '../../stores/cartStore'
 import type { GuestInfo } from '../../stores/orderStore'
 
 const orderStore = useOrderStore();
-const cartStore = useCartStore(); 
+const cartStore = useCartStore();
 const emit = defineEmits(['success', 'submit-checkout'])
 
 // ── État de la notification ───────────────────────────────────────
@@ -94,42 +104,45 @@ const showNotification = (type: 'success' | 'error', title: string, message = ''
     notify.value = { show: true, type, title, message };
 };
 
-// ── État du formulaire étendu (GuestInfo + payment_method) ────────
-const formData = ref<GuestInfo & { payment_method: string }>({
+// ── État du formulaire étendu ─────────────────────────────────────
+// 👈 Ajout de accept_cgv au typage et à l'état initial
+const formData = ref<GuestInfo & { payment_method: string, accept_cgv: boolean }>({
     full_name: '',
     email: '',
     phone_number: '',
     city: '',
     shipping_address: '',
-    payment_method: '' // 👈 Ajout du mode de paiement
+    payment_method: '',
+    accept_cgv: false
 })
 
+// 👈 Ajout de accept_cgv aux erreurs
 const errors = ref({
     full_name: '',
     email: '',
     phone_number: '',
     city: '',
     shipping_address: '',
-    payment_method: ''
+    payment_method: '',
+    accept_cgv: ''
 })
 
 const clearError = (field: keyof typeof errors.value) => {
     errors.value[field] = ''
 }
 
-// ── Options de paiement (mix des deux applications) ───────────────
+// ── Options de paiement ───────────────────────────────────────────
 const paymentOptions = ref([
     { value: 'WAVE',         name: 'Wave',          label: 'Wave' },
     { value: 'OMCIV2',       name: 'Orange Money',  label: 'Orange Money' },
     { value: 'FLOOZ',        name: 'Moov Money',    label: 'Moov Money' },
     { value: 'CARD',         name: 'Visa/MasterCard', label: 'Visa/MasterCard'}
-    // Ajoute les autres options si besoin...
 ]);
 
 // ── Validation ────────────────────────────────────────────────────
 const validateForm = () => {
     let isValid = true;
-    
+
     Object.keys(errors.value).forEach(key => {
         errors.value[key as keyof typeof errors.value] = ''
     });
@@ -167,6 +180,12 @@ const validateForm = () => {
         isValid = false;
     }
 
+    // ⚡️ Validation de la case à cocher
+    if (!formData.value.accept_cgv) {
+        errors.value.accept_cgv = 'Vous devez accepter les conditions générales de vente pour continuer.';
+        isValid = false;
+    }
+
     return isValid;
 }
 
@@ -174,15 +193,13 @@ const validateForm = () => {
 const submitOrder = async () => {
     if (!validateForm()) {
         showNotification('error', 'Champs manquants', 'Veuillez corriger les erreurs sur le formulaire.');
-        return; 
+        return;
     }
 
-    // 🔥 Sécurisation de l'email avec le composable Nuxt 3 useCookie
     const backupEmailCookie = useCookie('backup_checkout_email', { maxAge: 3600 });
     backupEmailCookie.value = formData.value.email;
-    
+
     try {
-        // 1. On sépare les données client (GuestInfo) du moyen de paiement
         const payloadGuest: GuestInfo = {
             full_name: formData.value.full_name,
             email: formData.value.email,
@@ -191,17 +208,14 @@ const submitOrder = async () => {
             shipping_address: formData.value.shipping_address
         };
 
-        // 2. On crée la commande dans le backend
         const order: any = await orderStore.checkout(payloadGuest);
         const orderId = order?.id ?? order?.order_id;
 
-        // Sécurité : On s'assure que la commande a bien été générée
         if (!orderId) {
             showNotification('error', 'Erreur système', "Impossible de générer l'identifiant de la commande.");
             return;
         }
 
-        // 3. On initialise le paiement avec l'ID de la nouvelle commande
         const paiementResponse: any = await orderStore.initiatePayment(
             {
                 order_id: orderId,
@@ -212,7 +226,6 @@ const submitOrder = async () => {
 
         const paymentUrl = paiementResponse?.payment_url || paiementResponse?.data?.payment_url || null;
 
-        // 4. On remonte l'événement vers la vue parente pour éventuellement faire une redirection
         emit('success', {
             paymentMethod: formData.value.payment_method,
             email: formData.value.email,
@@ -220,7 +233,7 @@ const submitOrder = async () => {
             phone: formData.value.phone_number,
             paymentUrl,
         });
-        
+
         emit('submit-checkout', formData.value);
 
     } catch (error: any) {
@@ -234,7 +247,6 @@ const submitOrder = async () => {
 </script>
 
 <style scoped>
-/* Ton CSS original reste inchangé, il est parfait ! */
 .checkout-form {
     width: 100%;
     max-width: 600px;
