@@ -26,6 +26,18 @@ export interface CollectionWithProducts extends Collection {
   products: Product[]
 }
 
+export interface Size {
+  id: number
+  name: string
+  code: string
+}
+
+export interface Color {
+  id: number
+  name: string
+  hex_code: string
+}
+
 export interface ProductImage {
   id?: number | string
   image: string
@@ -41,6 +53,8 @@ export interface Product {
   discount_price?: number | string | null
   image?: string
   images?: ProductImage[]
+  sizes?: Size[]
+  colors?: Color[]
   category?: Category
   collection?: Collection | number | string
   is_in_stock?: boolean

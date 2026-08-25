@@ -3,6 +3,7 @@
     <Mainheader theme="dark"/>
     <productDetail @addToCart="toggleCart"/>
     <cartModale :isOpen="isCartOpen" @close="toggleCart"/>
+    <footerSection />
   </div>
 </template>
 
@@ -11,11 +12,13 @@ import { ref } from 'vue';
 import productDetail from '../components/layout/productDetail.vue'
 import Mainheader from '../components/navigator/header.vue'
 import cartModale from '../components/modale/cartModale.vue'
+import footerSection from '~/components/layout/footerSection.vue';
 export default {
   components:{
     productDetail,
     Mainheader,
-    cartModale
+    cartModale,
+    footerSection
   },
   setup() {
     const isCartOpen = ref<boolean>(false);

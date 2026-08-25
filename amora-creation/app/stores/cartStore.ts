@@ -2,7 +2,7 @@ import {defineStore} from "pinia";
 import {ref, computed} from "vue";
 import {useNuxtApp} from "#app";
 
-import type {Product} from './productStore'
+import type {Product, Size, Color} from './productStore'
 
 export interface Message {
     success: string,
@@ -10,8 +10,11 @@ export interface Message {
 }
 
 export interface CartItem {
+    id: number | string,
     product: Product,
     quantity: number,
+    size?: Size,
+    color?: Color,
 }
 
 export interface Cart {
@@ -31,9 +34,9 @@ export const useCartStore = defineStore('cart', () => {
     const isLoading = ref<boolean>(false);
     const message = ref<Message | null>(null)
 
-    // State 
+    // State
     const cart = ref<Cart | null>(null);
-    
+
     // Getters
     const totalItems = computed(()=> {
         if(cart.value && cart.value.items){
@@ -73,11 +76,11 @@ export const useCartStore = defineStore('cart', () => {
                 product_id: productId,
                 quantity: quantity
             };
-            
+
             // Ajouter la taille et la couleur si elles sont fournies
             if (sizeId) body.size_id = sizeId;
             if (colorId) body.color_id = colorId;
-            
+
             const response = await $api('/cart/cart/add_item/',{
                 method: 'POST',
                 body: body

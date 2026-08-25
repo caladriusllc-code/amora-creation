@@ -2,7 +2,7 @@
     <transition name="fade">
         <div class="cart-modale-overlay" v-if="isOpen" @click.self="$emit('close')">
             <div class="modale-content">
-                
+
                 <div class="modale-header">
                     <h4>Votre panier ({{ cartItems.length }})</h4>
                     <button class="close-button" @click="$emit('close')" aria-label="Fermer">
@@ -21,20 +21,34 @@
                         <p>Votre panier est vide.</p>
                         <shopButton @click="$emit('close')" label="Continuer mes achats"/>
                     </div>
-                    
+
                     <div class="cart-items-list" v-else>
-                        <div v-for="item in cartItems" :key="item.id || item.product.id" 
+                        <div v-for="item in cartItems" :key="item.id || item.product.id"
                              class="cart-item"
                              :class="{ 'is-loading': loadingItemId === item.id }">
-                            
+
                             <div class="item-image-wrapper">
                                 <img :src="getCoverImage(item.product)" :alt="item.product.name" class="item-image" loading="lazy">
                             </div>
-                            
+
                             <div class="item-details">
                                 <h5 class="item-name">{{ item.product.name }}</h5>
-                                <p class="item-variants">{{ item.product.size || 'Taille unique' }}</p>
-                                
+
+                                <div class="item-variants" v-if="item.size || item.color">
+                                    <span v-if="item.size">Taille : {{ item.size.name }}</span>
+                                    <span v-if="item.size && item.color" class="variant-sep">·</span>
+                                    <span v-if="item.color" class="item-color-info">
+                                        <span
+                                            v-if="item.color.hex_code"
+                                            class="color-swatch"
+                                            :style="{ backgroundColor: item.color.hex_code }"
+                                            aria-hidden="true"
+                                        ></span>
+                                        Couleur : {{ item.color.name }}
+                                    </span>
+                                </div>
+                                <p v-else class="item-variants">Taille unique</p>
+
                                 <div class="quantity-controls">
                                     <button @click="decreaseQuantity(item)" class="qty-btn" :disabled="loadingItemId === item.id">−</button>
                                     <span class="qty-number">{{ item.quantity }}</span>
@@ -57,9 +71,9 @@
                         <span class="total-label">Total :</span>
                         <span class="total-amount">{{ formatPrice(cartTotal) }}</span>
                     </div>
-                    <button 
-                        class="checkout-button" 
-                        @click="()=> {router.push('/order')}" 
+                    <button
+                        class="checkout-button"
+                        @click="()=> {router.push('/order')}"
                         >
                             Commander
                         </button>
@@ -82,18 +96,40 @@ export default {
         isOpen: { type: Boolean, default: false }
     },
     emits: ['close'],
-    
+
     setup() {
 
         const router = useRouter();
 
         const cartStore = useCartStore();
-        
+
         // État de chargement léger par article
         const loadingItemId = ref<number | string | null>(null);
 
-        const cartItems = computed(() => cartStore.cart?.items || []);
-        
+        // Résout la taille/couleur d'un article, que l'API renvoie l'objet complet
+        // (item.size = { id, name, ... }) ou juste un id (item.size_id) à retrouver
+        // dans la liste des tailles/couleurs du produit.
+        const resolveVariant = (item: any, key: 'size' | 'color') => {
+            if (item[key] && typeof item[key] === 'object') return item[key];
+
+            const idKey = `${key}_id`;
+            const list = item.product?.[`${key}s`]; // product.sizes ou product.colors
+            if (item[idKey] && Array.isArray(list)) {
+                return list.find((v: any) => String(v.id) === String(item[idKey])) || null;
+            }
+
+            return null;
+        };
+
+        const cartItems = computed(() => {
+            const items = cartStore.cart?.items || [];
+            return items.map((item: any) => ({
+                ...item,
+                size: resolveVariant(item, 'size'),
+                color: resolveVariant(item, 'color'),
+            }));
+        });
+
         const cartTotal = computed(() => {
             if (cartStore.cart?.total) return cartStore.cart.total;
             return cartItems.value.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0);
@@ -141,7 +177,7 @@ export default {
             cartStore.fetchCart();
         });
 
-        return { 
+        return {
             router,
             cartItems, cartTotal, isGlobalLoading, loadingItemId,
             formatPrice, getCoverImage, increaseQuantity, decreaseQuantity, removeItem
@@ -167,7 +203,7 @@ export default {
     background-color: #fff;
     border-radius: 8px;
     width: 90%;
-    height: 80vh; 
+    height: 80vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* Ombre légère */
@@ -217,7 +253,17 @@ export default {
 
 .item-details { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
 .item-name { margin: 0; font-size: 0.95rem; font-weight: 600; }
-.item-variants { margin: 0; font-size: 0.8rem; color: #666; }
+.item-variants { margin: 0; font-size: 0.8rem; color: #666; display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; }
+.variant-sep { color: #ccc; }
+.item-color-info { display: inline-flex; align-items: center; gap: 0.3rem; }
+.color-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
 
 .quantity-controls {
     display: flex; align-items: center; gap: 0.8rem;

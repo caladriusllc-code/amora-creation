@@ -1,13 +1,13 @@
 <template>
     <div v-if="colors.length > 0" class="color-selector-container">
         <h3 class="color-title">
-            Couleurs disponibles 
+            Couleurs disponibles
             <span v-if="selectedColor" class="selected-text">- {{ selectedColor.name }}</span>
         </h3>
-        
+
         <div class="colors-row">
-            <button 
-                v-for="color in colors" 
+            <button
+                v-for="color in colors"
                 :key="color.id"
                 class="color-circle-wrapper"
                 :class="{ 'is-selected': selectedColor?.id === color.id }"
@@ -15,8 +15,8 @@
                 :aria-label="`Sélectionner la couleur ${color.name}`"
                 :title="color.name"
             >
-                <span 
-                    class="color-circle" 
+                <span
+                    class="color-circle"
                     :style="{ backgroundColor: color.hex_code || '#cccccc' }"
                 ></span>
             </button>
@@ -25,14 +25,12 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
-import type { PropType } from 'vue';
+import { defineComponent, ref, watch, PropType } from 'vue';
 
-// On définit la structure d'une couleur (depuis le backend)
 interface ColorType {
     id: number;
     name: string;
-    hex_code: string | null; // Le code couleur HTML (ex: #000000)
+    hex_code: string | null;
 }
 
 export default defineComponent({
@@ -43,17 +41,30 @@ export default defineComponent({
             default: () => []
         }
     },
-    emits: ['color-selected'], // Permet d'envoyer la couleur choisie au parent
+    emits: ['color-selected'],
     setup(props, { emit }) {
+        // 👇 Start with no selection (null)
+        const selectedColor = ref<ColorType | null>(null);
 
-        // État pour stocker la couleur actuellement sélectionnée (par défaut, on peut présélectionner la 1ère)
-        const selectedColor = computed(() => {
-            return props.colors.length > 0 ? props.colors[0] : null;
-        });
+        // If the colors prop changes, do NOT auto-select the first one.
+        // Instead, if the currently selected color is no longer in the list,
+        // simply set it to null (or keep it if it still exists).
+        watch(
+            () => props.colors,
+            (newColors) => {
+                if (!selectedColor.value) return; // already null, nothing to do
+                // If the selected color is still in the new list, keep it.
+                const stillExists = newColors.some(c => c.id === selectedColor.value!.id);
+                if (!stillExists) {
+                    selectedColor.value = null; // otherwise reset
+                }
+            },
+            { immediate: true } // runs on mount, but selectedColor is already null
+        );
 
-        // Fonction déclenchée au clic
         const selectColor = (color: ColorType) => {
-            emit('color-selected', color); // Prévient le composant parent
+            selectedColor.value = color;
+            emit('color-selected', color);
         };
 
         return {
@@ -94,7 +105,7 @@ export default defineComponent({
     gap: 16px; /* Espace entre les couleurs */
     overflow-x: auto;
     padding: 4px; /* Un peu d'espace pour l'anneau de sélection */
-    
+
     /* Cache la barre de défilement par défaut */
     scrollbar-width: none;
     -ms-overflow-style: none;
