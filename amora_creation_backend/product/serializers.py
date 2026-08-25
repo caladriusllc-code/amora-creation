@@ -44,6 +44,10 @@ class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     collection = CollectionSerializer(read_only=True)
     
+    # Imbrication des tailles et couleurs disponibles pour le produit
+    sizes = SizeSerializer(many=True, read_only=True)
+    colors = ColorSerializer(many=True, read_only=True)
+    
     # On utilise related_name='images' et 'variants' définis dans les modèles
     images = ProductImageSerializer(many=True, read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
@@ -59,7 +63,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'category', 'collection', 'is_active', 'is_featured',
             'meta_title', 'meta_description', 'created_at', 'updated_at',
             # Relations et propriétés dynamiques
-            'images', 'variants', 'total_stock', 'is_in_stock'
+            'images', 'variants', 'sizes', 'colors', 'total_stock', 'is_in_stock'
         ]
 
 class CategoryDetailSerializer(CategorySerializer):

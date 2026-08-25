@@ -64,17 +64,23 @@ export const useCartStore = defineStore('cart', () => {
 
     }
 
-    async function addToCart(productId: string | number, quantity: number = 1){
+    async function addToCart(productId: string | number, quantity: number = 1, sizeId?: number, colorId?: number){
         isLoading.value = true;
         message.value = null;
 
         try {
+            const body: any = {
+                product_id: productId,
+                quantity: quantity
+            };
+            
+            // Ajouter la taille et la couleur si elles sont fournies
+            if (sizeId) body.size_id = sizeId;
+            if (colorId) body.color_id = colorId;
+            
             const response = await $api('/cart/cart/add_item/',{
                 method: 'POST',
-                body: {
-                    product_id: productId,
-                    quantity: quantity
-                }
+                body: body
             })
 
             if (response) {

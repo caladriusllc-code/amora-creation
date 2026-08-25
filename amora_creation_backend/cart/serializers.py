@@ -72,19 +72,33 @@ class CouponSerializer(serializers.ModelSerializer):
 # ==========================================
 
 class CartItemSerializer(serializers.ModelSerializer):
-    # Pour la lecture : renvoie l'objet produit complet
     product = ProductSerializer(read_only=True)
-    # Pour l'écriture : permet de passer l'ID du produit lors de l'ajout au panier
+    size = SizeSerializer(read_only=True)
+    color = ColorSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), 
         source='product', 
         write_only=True
     )
+    size_id = serializers.PrimaryKeyRelatedField(
+        queryset=Size.objects.all(),
+        source='size',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    color_id = serializers.PrimaryKeyRelatedField(
+        queryset=Color.objects.all(),
+        source='color',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
     subtotal = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'product_id', 'quantity', 'unit_price', 'subtotal']
+        fields = ['id', 'product', 'product_id', 'size', 'size_id', 'color', 'color_id', 'quantity', 'unit_price', 'subtotal']
         read_only_fields = ['unit_price']
 
     def get_subtotal(self, obj):

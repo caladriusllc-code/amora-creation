@@ -18,7 +18,8 @@
 </template>
 
 <script lang="ts">
-import { ref, computed, defineComponent, PropType } from 'vue';
+import { ref, defineComponent } from 'vue';
+import type { PropType } from 'vue';
 
 // On définit la structure d'une taille (depuis le backend)
 interface SizeType {
@@ -30,27 +31,13 @@ interface SizeType {
 export default defineComponent({
     name: 'ProductSizes',
     props: {
-        variants: {
-            type: Array as PropType<any[]>,
+        sizes: {
+            type: Array as PropType<SizeType[]>,
             default: () => []
         }
     },
     emits: ['size-selected'], // Permet d'envoyer la taille sélectionnée au composant parent
     setup(props, { emit }) {
-        // Extraire les tailles uniques des variantes du backend
-        const sizes = computed(() => {
-            if (!props.variants || props.variants.length === 0) return [];
-            
-            // Créer une Map pour garder les tailles uniques par ID
-            const uniqueSizes = new Map();
-            props.variants.forEach(variant => {
-                if (variant.size && !uniqueSizes.has(variant.size.id)) {
-                    uniqueSizes.set(variant.size.id, variant.size);
-                }
-            });
-            
-            return Array.from(uniqueSizes.values());
-        });
 
         // État pour stocker la taille actuellement cliquée
         const selectedSize = ref<SizeType | null>(null);
@@ -62,7 +49,7 @@ export default defineComponent({
         };
 
         return {
-            sizes,
+            sizes: props.sizes,
             selectedSize,
             selectSize
         };

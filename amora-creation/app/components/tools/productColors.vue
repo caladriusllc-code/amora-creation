@@ -25,7 +25,8 @@
 </template>
 
 <script lang="ts">
-import { ref, computed, defineComponent, PropType } from 'vue';
+import { computed, defineComponent } from 'vue';
+import type { PropType } from 'vue';
 
 // On définit la structure d'une couleur (depuis le backend)
 interface ColorType {
@@ -37,31 +38,17 @@ interface ColorType {
 export default defineComponent({
     name: 'ProductColors',
     props: {
-        variants: {
-            type: Array as PropType<any[]>,
+        colors: {
+            type: Array as PropType<ColorType[]>,
             default: () => []
         }
     },
     emits: ['color-selected'], // Permet d'envoyer la couleur choisie au parent
     setup(props, { emit }) {
-        // Extraire les couleurs uniques des variantes du backend
-        const colors = computed(() => {
-            if (!props.variants || props.variants.length === 0) return [];
-            
-            // Créer une Map pour garder les couleurs uniques par ID
-            const uniqueColors = new Map();
-            props.variants.forEach(variant => {
-                if (variant.color && !uniqueColors.has(variant.color.id)) {
-                    uniqueColors.set(variant.color.id, variant.color);
-                }
-            });
-            
-            return Array.from(uniqueColors.values());
-        });
 
         // État pour stocker la couleur actuellement sélectionnée (par défaut, on peut présélectionner la 1ère)
         const selectedColor = computed(() => {
-            return colors.value.length > 0 ? colors.value[0] : null;
+            return props.colors.length > 0 ? props.colors[0] : null;
         });
 
         // Fonction déclenchée au clic
@@ -70,7 +57,7 @@ export default defineComponent({
         };
 
         return {
-            colors,
+            colors: props.colors,
             selectedColor,
             selectColor
         };

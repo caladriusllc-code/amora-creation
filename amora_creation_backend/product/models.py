@@ -129,6 +129,20 @@ class Product(models.Model):
         blank=True, 
         verbose_name="Collection"
     )
+    
+    # Tailles et couleurs disponibles pour ce produit
+    sizes = models.ManyToManyField(
+        Size,
+        related_name='products',
+        blank=True,
+        verbose_name="Tailles disponibles"
+    )
+    colors = models.ManyToManyField(
+        Color,
+        related_name='products',
+        blank=True,
+        verbose_name="Couleurs disponibles"
+    )
 
     # Affichage et Visibilité
     is_active = models.BooleanField(default=True, verbose_name="Afficher sur la boutique")

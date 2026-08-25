@@ -7,11 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import (
-    Product, Coupon, 
-    Cart, CartItem, GuestInfo
+    Coupon, Cart, CartItem, GuestInfo
 )
 from product.models import (
-    Product, Category, Collection,
+    Product, Category, Collection, Size, Color
 )
 from .serializers import *
 
@@ -69,6 +68,8 @@ class CartViewSet(viewsets.ViewSet):
         
         product_id = request.data.get('product_id')
         quantity = int(request.data.get('quantity', 1))
+        size_id = request.data.get('size_id')
+        color_id = request.data.get('color_id')
 
         if not product_id:
             return Response(
@@ -77,10 +78,14 @@ class CartViewSet(viewsets.ViewSet):
             )
 
         product = get_object_or_404(Product, id=product_id)
+        size = get_object_or_404(Size, id=size_id) if size_id else None
+        color = get_object_or_404(Color, id=color_id) if color_id else None
 
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             product=product,
+            size=size,
+            color=color,
             defaults={'unit_price': product.price, 'quantity': quantity}
         )
 

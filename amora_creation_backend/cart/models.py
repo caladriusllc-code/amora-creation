@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from product.models import Product
+from product.models import Product, Size, Color
 import uuid
 
 # Create your models here.
@@ -94,6 +94,20 @@ class CartItem(models.Model):
         related_name='cart_items', 
         null=True, 
         blank=True
+    )
+    size = models.ForeignKey(
+        Size,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cart_items'
+    )
+    color = models.ForeignKey(
+        Color,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cart_items'
     )
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(

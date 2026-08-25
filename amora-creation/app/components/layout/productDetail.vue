@@ -43,8 +43,8 @@
                 <shopButton @click="addToCart()"/>
             </div>
 
-            <productSizes :variants="product.variants" @size-selected="onSizeSelected" />
-            <productColors :variants="product.variants" @color-selected="onColorSelected" />
+            <productSizes :sizes="product.sizes" @size-selected="onSizeSelected" />
+            <productColors :colors="product.colors" @color-selected="onColorSelected" />
         </div>
 
     </div>
@@ -206,10 +206,15 @@ export default {
         };
 
         async function addToCart(){
-
             try{
                 if (product.value?.id){
-                    await cartStore.addToCart(product.value.id, 1)
+                    // Passer la taille et couleur sélectionnées
+                    await cartStore.addToCart(
+                        product.value.id,
+                        1,
+                        selectedSize.value?.id,
+                        selectedColor.value?.id
+                    )
                 }
 
                 return cartStore.cart;
