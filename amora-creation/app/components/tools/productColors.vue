@@ -1,5 +1,5 @@
 <template>
-    <div class="color-selector-container">
+    <div v-if="colors.length > 0" class="color-selector-container">
         <h3 class="color-title">
             Couleurs disponibles 
             <span v-if="selectedColor" class="selected-text">- {{ selectedColor.name }}</span>
@@ -17,7 +17,7 @@
             >
                 <span 
                     class="color-circle" 
-                    :style="{ backgroundColor: color.hex }"
+                    :style="{ backgroundColor: color.hex_code || '#cccccc' }"
                 ></span>
             </button>
         </div>
@@ -25,34 +25,47 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent } from 'vue';
+import { ref, computed, defineComponent, PropType } from 'vue';
 
-// On définit la structure d'une couleur
+// On définit la structure d'une couleur (depuis le backend)
 interface ColorType {
     id: number;
     name: string;
-    hex: string; // Le code couleur HTML (ex: #000000)
+    hex_code: string | null; // Le code couleur HTML (ex: #000000)
 }
 
 export default defineComponent({
     name: 'ProductColors',
+    props: {
+        variants: {
+            type: Array as PropType<any[]>,
+            default: () => []
+        }
+    },
     emits: ['color-selected'], // Permet d'envoyer la couleur choisie au parent
     setup(props, { emit }) {
-        // Liste de tes couleurs (à adapter selon tes produits)
-        const colors = ref<ColorType[]>([
-            { id: 1, name: 'Noir Ébène', hex: '#1a1a1a' },
-            { id: 2, name: 'Blanc Ivoire', hex: '#fdfdfd' },
-            { id: 3, name: 'Rouge Rubis', hex: '#8b0000' },
-            { id: 4, name: 'Bleu Nuit', hex: '#191970' },
-            { id: 5, name: 'Vert Émeraude', hex: '#50c878' },
-        ]);
+        // Extraire les couleurs uniques des variantes du backend
+        const colors = computed(() => {
+            if (!props.variants || props.variants.length === 0) return [];
+            
+            // Créer une Map pour garder les couleurs uniques par ID
+            const uniqueColors = new Map();
+            props.variants.forEach(variant => {
+                if (variant.color && !uniqueColors.has(variant.color.id)) {
+                    uniqueColors.set(variant.color.id, variant.color);
+                }
+            });
+            
+            return Array.from(uniqueColors.values());
+        });
 
         // État pour stocker la couleur actuellement sélectionnée (par défaut, on peut présélectionner la 1ère)
-        const selectedColor = ref<ColorType | null>(colors.value[0]);
+        const selectedColor = computed(() => {
+            return colors.value.length > 0 ? colors.value[0] : null;
+        });
 
         // Fonction déclenchée au clic
         const selectColor = (color: ColorType) => {
-            selectedColor.value = color;
             emit('color-selected', color); // Prévient le composant parent
         };
 

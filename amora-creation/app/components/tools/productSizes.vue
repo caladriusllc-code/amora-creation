@@ -1,6 +1,6 @@
 <template>
-    <div class="size-selector-container">
-        <h3 class="size-title">Tailles disponibles <span v-if="selectedSize" class="selected-text">- Taille choisie : EU {{ selectedSize.eu }}</span></h3>
+    <div v-if="sizes.length > 0" class="size-selector-container">
+        <h3 class="size-title">Tailles disponibles <span v-if="selectedSize" class="selected-text">- Taille choisie : {{ selectedSize.name }}</span></h3>
         
         <div class="sizes-row">
             <button 
@@ -11,37 +11,46 @@
                 @click="selectSize(size)"
                 aria-label="Sélectionner la taille"
             >
-                <span class="size-label">EU {{ size.eu }}</span>
-                <hr class="size-divider" />
-                <span class="size-label">AF {{ size.af }}</span>
+                <span class="size-label">{{ size.name }}</span>
             </button>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { ref, defineComponent } from 'vue';
+import { ref, computed, defineComponent, PropType } from 'vue';
 
-// On définit la structure d'une taille
+// On définit la structure d'une taille (depuis le backend)
 interface SizeType {
     id: number;
-    eu: number;
-    af: number;
+    name: string;
+    code: string;
 }
 
 export default defineComponent({
     name: 'ProductSizes',
+    props: {
+        variants: {
+            type: Array as PropType<any[]>,
+            default: () => []
+        }
+    },
     emits: ['size-selected'], // Permet d'envoyer la taille sélectionnée au composant parent
     setup(props, { emit }) {
-        // Liste de tes tailles (tu pourras plus tard les recevoir depuis une base de données)
-        const sizes = ref<SizeType[]>([
-            { id: 1, eu: 36, af: 38 },
-            { id: 2, eu: 38, af: 40 },
-            { id: 3, eu: 40, af: 42 },
-            { id: 4, eu: 42, af: 44 },
-            { id: 5, eu: 44, af: 46 },
-            { id: 6, eu: 46, af: 48 },
-        ]);
+        // Extraire les tailles uniques des variantes du backend
+        const sizes = computed(() => {
+            if (!props.variants || props.variants.length === 0) return [];
+            
+            // Créer une Map pour garder les tailles uniques par ID
+            const uniqueSizes = new Map();
+            props.variants.forEach(variant => {
+                if (variant.size && !uniqueSizes.has(variant.size.id)) {
+                    uniqueSizes.set(variant.size.id, variant.size);
+                }
+            });
+            
+            return Array.from(uniqueSizes.values());
+        });
 
         // État pour stocker la taille actuellement cliquée
         const selectedSize = ref<SizeType | null>(null);
@@ -121,16 +130,6 @@ export default defineComponent({
     font-weight: 500;
     color: #555;
     transition: color 0.3s ease;
-}
-
-/* La petite ligne de séparation au milieu */
-.size-divider {
-    width: 40%;
-    height: 1px;
-    background-color: #ccc;
-    border: none;
-    margin: 6px 0;
-    transition: background-color 0.3s ease;
 }
 
 /* Effet au survol de la souris (Desktop) */

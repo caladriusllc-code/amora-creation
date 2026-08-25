@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <Mainheader @toggle-cart="toggleCart" />
+    <Mainheader @toggle-cart="toggleCart" theme="black" />
     <main>
       <collectionSection />
     </main>

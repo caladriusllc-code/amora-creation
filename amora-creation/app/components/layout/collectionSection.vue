@@ -65,93 +65,94 @@ const getCollectionImage = (collection: any) => {
 
 <style scoped>
 .collection-section {
-  padding: 4rem 2rem;
-  background-color: #fafafa;
-  text-align: center;
+    padding: 8rem 1rem 1rem 1rem;
+    background-color: #fafafa;
+    text-align: center;
 }
 
 .section-header {
-  margin-bottom: 2rem;
+    margin-bottom: 2rem;
 }
 
 .section-title {
-  font-size: 2.25rem;
-  color: #111827;
-  margin-bottom: 0.5rem;
+    font-size: 2.25rem;
+    color: #111827;
+    margin-bottom: 0.5rem;
 }
 
 .section-subtitle {
-  color: #6b7280;
-  max-width: 640px;
-  margin: 0 auto;
+    color: #6b7280;
+    max-width: 640px;
+    margin: 0 auto;
 }
 
 .loading-state,
 .error-state {
-  color: #374151;
-  font-size: 1rem;
-  padding: 2rem 0;
+    color: #374151;
+    font-size: 1rem;
+    padding: 2rem 0;
 }
 
 .collections-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
 }
 
 .collection-card {
-  border-radius: 24px;
-  overflow: hidden;
-  background: white;
-  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.08);
-  display: flex;
-  flex-direction: column;
-  min-height: 320px;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+    max-width: 320px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .collection-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12);
 }
 
 .collection-image {
-  min-height: 220px;
-  background-size: cover;
-  background-position: center;
+    min-height: 320px;
+    background-size: cover;
+    background-position: center;
 }
 
 .collection-content {
-  padding: 1.5rem;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+    padding: 1.5rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .collection-content h3 {
-  font-size: 1.25rem;
-  color: #111827;
-  margin: 0;
+    font-size: 1.25rem;
+    color: #111827;
+    margin: 0;
 }
 
 .collection-content p {
-  color: #4b5563;
-  line-height: 1.6;
-  margin: 0;
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0;
 }
 
 .collection-button {
-  margin-top: 0.25rem;
-  align-self: flex-start;
-  border: none;
-  background: #111827;
-  color: white;
-  border-radius: 999px;
-  padding: 0.7rem 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
+    margin-top: 0.25rem;
+    align-self: flex-start;
+    border: none;
+    background: #111827;
+    color: white;
+    border-radius: 999px;
+    padding: 0.7rem 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
 }
 </style>

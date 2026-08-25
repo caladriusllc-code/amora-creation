@@ -19,10 +19,11 @@
       
       <ul class="nav-links">
         <li><NuxtLink to="/" exact-active-class="active-link">Accueil</NuxtLink></li>
-        <li><NuxtLink to="/Collection" exact-active-class="active-link">Collection</NuxtLink></li>
-        <li><NuxtLink to="/categories" exact-active-class="active-link">Categories</NuxtLink></li>
-        <li><NuxtLink to="/tendances" exact-active-class="active-link">Tendances</NuxtLink></li>
-        <li><NuxtLink to="/soldes" exact-active-class="active-link">Soldes</NuxtLink></li>
+        <li><NuxtLink to="/collection" active-class="active-link">Collection</NuxtLink></li>
+        <li><NuxtLink to="/categories" active-class="active-link">Categories</NuxtLink></li>
+        <li><NuxtLink to="/soldes" active-class="active-link">Soldes</NuxtLink></li>
+        <li><NuxtLink to="/tendances" active-class="active-link">A propos</NuxtLink></li>
+        
       </ul>
 
       <div class="nav-actions">
@@ -58,10 +59,10 @@
     <transition name="menu-slide">
       <div v-if="isMenuOpen" class="mobile-menu">
         <ul class="mobile-nav-links">
-          <li @click="closeMenu"><NuxtLink to="/Collection" exact-active-class="active-link">Collection</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/categories" exact-active-class="active-link">Categories</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/tendances" exact-active-class="active-link">Tendances</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/soldes" exact-active-class="active-link">Soldes</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/collection" active-class="active-link">Collection</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/categories" active-class="active-link">Categories</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/soldes" active-class="active-link">Soldes</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/tendances" active-class="active-link">A propos</NuxtLink></li>
         </ul>
       </div>
     </transition>

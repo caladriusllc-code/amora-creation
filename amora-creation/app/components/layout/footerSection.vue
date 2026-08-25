@@ -3,13 +3,13 @@
     <!-- Section principale du footer -->
     <div class="footer-main">
       <div class="footer-container">
-        
+
         <!-- Colonne 1: Logo et description -->
         <div class="footer-column">
           <div class="logo-section">
             <h3 class="logo">AMORA.</h3>
             <p class="description">
-              Votre destination shopping premium pour des chaussures de qualité. Livraison rapide et service client exceptionnel.
+              Votre destination shopping premium pour des tenues de qualités faites maison. Livraison rapide et service client exceptionnel.
             </p>
             <div class="social-links">
               <a href="#" class="social-link" aria-label="Facebook">
@@ -48,7 +48,7 @@
           <h4 class="column-title">Aide</h4>
           <ul class="footer-links">
             <li><a href="#" class="footer-link">Contactez-nous</a></li>
-<li><a href="#" class="footer-link">Livraison & Retours</a></li>
+            <li><a href="#" class="footer-link">Livraison & Retours</a></li>
             <li><a href="#" class="footer-link">Guide des tailles</a></li>
             <li><a href="#" class="footer-link">FAQ</a></li>
             <li><a href="#" class="footer-link">Suivi de commande</a></li>
@@ -75,9 +75,9 @@
               Inscrivez-vous pour recevoir nos offres exclusives et nouveautés
             </p>
             <div class="newsletter-form">
-              <input 
-                type="email" 
-                placeholder="Votre email" 
+              <input
+                type="email"
+                placeholder="Votre email"
                 class="newsletter-input"
               >
               <button class="newsletter-btn">

@@ -1,15 +1,15 @@
 <template>
     <div v-if="product" class="product-detail-layout">
-        
+
         <div class="pic-detail-layout">
             <article class="main-pic">
                 <img :src="currentMainImage" :alt="product.name">
             </article>
-            
+
             <div ref="cardsContainer" class="cards-layout" v-if="secondaryImages.length > 0">
-                <article 
-                    v-for="img in secondaryImages" 
-                    :key="img.id" 
+                <article
+                    v-for="img in secondaryImages"
+                    :key="img.id"
                     class="second-pic"
                     @click="setMainImage(img.image)"
                     style="cursor: pointer;"
@@ -20,8 +20,8 @@
 
             <div v-show="showScrollbar && secondaryImages.length > 0" class="custom-scrollbar-container">
                 <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
-                    <div 
-                    class="scrollbar-thumb" 
+                    <div
+                    class="scrollbar-thumb"
                     :style="{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }"
                     @mousedown.prevent="startDrag"
                     @touchstart="startDrag"
@@ -34,7 +34,7 @@
             <div class="product-detail">
                 <h2 class="product-name">{{ product.name }}</h2>
                 <p class="product-description">{{ product.description }}</p>
-                
+
                 <div class="buy-section">
                     <p class="product-price">
                         {{ product.discount_price ? product.discount_price : product.price }} FCFA
@@ -43,10 +43,10 @@
                 <shopButton @click="addToCart()"/>
             </div>
 
-            <productSizes/>
-            <productColors/>
+            <productSizes :variants="product.variants" @size-selected="onSizeSelected" />
+            <productColors :variants="product.variants" @color-selected="onColorSelected" />
         </div>
-        
+
     </div>
 
     <div v-else class="loading-state">
@@ -94,7 +94,7 @@ export default {
         // 🛠️ MODIFIÉ : L'image principale affiche "selectedImage" si elle existe, sinon elle prend l'image par défaut
         const currentMainImage = computed(() => {
             if (selectedImage.value) return selectedImage.value;
-            
+
             if (!product.value?.images?.length) return 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
             const main = product.value.images.find(img => img.is_main);
             return main ? main.image : product.value.images[0].image;
@@ -192,6 +192,18 @@ export default {
         };
 
         // Logique pour ajouter le produit au panier
+        const selectedSize = ref<any>(null);
+        const selectedColor = ref<any>(null);
+
+        const onSizeSelected = (size: any) => {
+            selectedSize.value = size;
+            console.log('Taille sélectionnée:', size);
+        };
+
+        const onColorSelected = (color: any) => {
+            selectedColor.value = color;
+            console.log('Couleur sélectionnée:', color);
+        };
 
         async function addToCart(){
 
@@ -215,19 +227,23 @@ export default {
             const container = cardsContainer.value;
             if (container) {
                 container.addEventListener('scroll', updateScrollbar);
-                setTimeout(() => updateScrollbar(), 100); 
+                setTimeout(() => updateScrollbar(), 100);
             }
         });
 
         return {
             product,
-            currentMainImage, // 🛠️ Exporter la nouvelle variable
-            secondaryImages, 
-            setMainImage,     // 🛠️ Exporter la fonction de clic
-            
+            currentMainImage,
+            secondaryImages,
+            setMainImage,
+            selectedSize,
+            selectedColor,
+            onSizeSelected,
+            onColorSelected,
+
             cardsContainer,
             trackRef,
-            thumbWidth, 
+            thumbWidth,
             thumbLeft,
             showScrollbar,
             startDrag,
@@ -296,30 +312,30 @@ export default {
 
 .cards-layout {
     display: flex;
-    flex-direction: row; 
-    overflow-x: auto; 
+    flex-direction: row;
+    overflow-x: auto;
     width: 100%;
-    gap: 12px; 
+    gap: 12px;
     padding: 5px;
-    scrollbar-width: none; 
-    -ms-overflow-style: none; 
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .cards-layout::-webkit-scrollbar {
-    display: none; 
+    display: none;
 }
 
 .second-pic {
-    flex-shrink: 0; 
-    width: 45%; 
-    height: 220px; 
+    flex-shrink: 0;
+    width: 45%;
+    height: 220px;
 }
 
 .second-pic img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 8px; 
+    border-radius: 8px;
 }
 
 .custom-scrollbar-container {
@@ -340,7 +356,7 @@ export default {
 
 .scrollbar-thumb {
     height: 100%;
-    background-color: #333; 
+    background-color: #333;
     border-radius: 4px;
     position: absolute;
     top: 0;
@@ -371,12 +387,12 @@ export default {
         justify-content: space-around;
         max-width: 1200px;
         margin: 0 auto;
-        padding-top: 4rem;
+        padding-top: 8rem;
         gap: 2rem; /* Espacement aéré entre l'image et les infos */
     }
 
     .pic-detail-layout {
-        flex-direction: row; 
+        flex-direction: row;
         align-items: flex-start;
         width: 50%; /* La colonne image prend 50% */
         gap: 1rem; /* Espace entre l'image principale et les miniatures */
@@ -398,7 +414,7 @@ export default {
 
     .cards-layout {
         flex-direction: column;
-        overflow-y: auto; 
+        overflow-y: auto;
         overflow-x: hidden;
         height: 100%;
         max-height: 600px; /* Limite la hauteur de la colonne de miniatures */
@@ -407,7 +423,7 @@ export default {
     }
 
     .second-pic {
-        width: 100px; 
+        width: 100px;
         height: 140px; /* Ajuste la hauteur des miniatures sur ordinateur */
         margin-bottom: 0;
     }
@@ -419,7 +435,7 @@ export default {
     /* Réinitialise les padding inutiles puisque le parent info-detail-layout gère l'espacement */
     .product-detail {
         width: 100%;
-        padding: 0; 
+        padding: 0;
     }
 }
 </style>

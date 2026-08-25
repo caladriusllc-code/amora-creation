@@ -1,6 +1,6 @@
 <template>
     <div class="page-container">
-        <Mainheader theme="dark" @toggle-cart="toggleCart"/>
+        <Mainheader theme="black" @toggle-cart="toggleCart"/>
         <categoryWithProducts />
         <FooterSection/>
         <cartModale :isOpen="isCartOpen" @close="toggleCart"/>

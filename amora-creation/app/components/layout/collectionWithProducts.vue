@@ -94,7 +94,7 @@ watch(
 )
 
 const goToProductDetail = (slug: string) => {
-  router.push(`/produits/${slug}`)
+  router.push(`/product/${slug}`)
 }
 
 const addToCart = async (productId: number | string) => {
