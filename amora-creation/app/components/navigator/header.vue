@@ -1,34 +1,42 @@
 <template>
-  <header 
-    class="site-header" 
+  <header
+    class="site-header"
     :class="[
       `theme--${theme}`,
-      { 
-        'header--hidden': !showHeader, 
-        'header--transparent': theme === 'transparent' && isAtTop && !isMenuOpen && !isSearchOpen, 
+      {
+        'header--hidden': !showHeader,
+        'header--transparent': theme === 'transparent' && isAtTop && !isMenuOpen && !isSearchOpen,
         'header--solid': theme === 'transparent' && (!isAtTop || isMenuOpen || isSearchOpen)
       }
     ]"
   >
     <div class="top-bar">
-      Sign up and get 20% off to your first order. <a href="#" class="top-bar-link">Sign up now</a>
+      <p>DECOUVREZ VOTRE BOUTIQUE DE MODE AFRICAINE</p>
     </div>
-    
+
     <nav class="main-nav">
       <div class="logo" @click="()=>{router.push('/')}">Amora.</div>
-      
+
       <ul class="nav-links">
         <li><NuxtLink to="/" exact-active-class="active-link">Accueil</NuxtLink></li>
         <li><NuxtLink to="/collection" active-class="active-link">Collection</NuxtLink></li>
         <li><NuxtLink to="/categories" active-class="active-link">Categories</NuxtLink></li>
         <li><NuxtLink to="/soldes" active-class="active-link">Soldes</NuxtLink></li>
         <li><NuxtLink to="/tendances" active-class="active-link">A propos</NuxtLink></li>
-        
       </ul>
 
       <div class="nav-actions">
+        <!-- ⚡️ CORRECTION : L'input desktop a maintenant toutes ses props -->
         <div class="desktop-search">
-          <BaseResearchInput />
+          <BaseResearchInput
+            placeholder="Que recherchez-vous ?"
+            v-model="query"
+            :results="productStore.searchResults"
+            :isLoading="productStore.isSearching"
+            @search="handleSearch"
+            @clear="clearSearch"
+            @select="goToProduct"
+          />
         </div>
 
         <button class="mobile-search-toggle" @click="toggleSearch" aria-label="Rechercher">
@@ -37,11 +45,11 @@
           </svg>
         </button>
 
-        <cart-button 
+        <cart-button
           :badgeCount="cartStore.totalItems"
           @click="()=>$emit('toggle-cart')"
         />
-        
+
         <button class="hamburger" @click="toggleMenu" aria-label="Menu" :class="{ 'is-active': isMenuOpen }">
           <span></span>
           <span></span>
@@ -50,9 +58,18 @@
       </div>
     </nav>
 
+    <!-- ⚡️ CORRECTION : L'input mobile est corrigé (plus de @select vide) -->
     <transition name="menu-slide">
       <div v-if="isSearchOpen" class="mobile-search-dropdown">
-        <BaseResearchInput placeholder="Que recherchez-vous ?" v-model="query"/>
+        <BaseResearchInput
+            placeholder="Que recherchez-vous ?"
+            v-model="query"
+            :results="productStore.searchResults"
+            :isLoading="productStore.isSearching"
+            @search="handleSearch"
+            @clear="clearSearch"
+            @select="goToProduct"
+        />
       </div>
     </transition>
 
@@ -74,7 +91,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useCartStore } from '../../stores/cartStore'
-
+import { useProductStore } from '~/stores/productStore';
 import cartButton from '../buttons/cartButton.vue';
 import BaseResearchInput from '../input/BaseResarchInput.vue';
 
@@ -83,36 +100,67 @@ export default {
   props: {
     theme: {
       type: String,
-      default: 'transparent', // 'transparent', 'light', or 'dark'
+      default: 'transparent',
     }
   },
 
   emits: ['toggle-cart'],
-  
+
   setup() {
     const cartStore = useCartStore();
-
+    const productStore = useProductStore();
     const router = useRouter();
 
     const isMenuOpen = ref(false);
-    const isSearchOpen = ref(false); 
-    const query = ref('')
+    const isSearchOpen = ref(false);
+    const query = ref('');
+    let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    // ⚡️ CORRECTION : Ajout du délai 300ms et sécurisation du paramètre
+    const handleSearch = (searchQuery: string) => {
+      if (debounceTimeout) clearTimeout(debounceTimeout)
+
+      if (typeof searchQuery !== 'string' || !searchQuery.trim()) {
+        productStore.searchResults = [];
+        return;
+      }
+
+      // Attends 300ms après la saisie de l'utilisateur
+      debounceTimeout = setTimeout(() => {
+        productStore.searchProducts(searchQuery)
+      }, 300) // Le fameux 300 manquant !
+    }
+
+    // ⚡️ NOUVEAU : Fonction propre pour nettoyer la recherche
+    const clearSearch = () => {
+      query.value = '';
+      productStore.searchResults = [];
+    }
+
+    // ⚡️ NOUVEAU : Gère le clic sur un résultat de recherche
+    const goToProduct = (product: any) => {
+      if (product && product.slug) {
+        router.push(`/produits/${product.slug}`);
+        clearSearch();
+        isSearchOpen.value = false;
+      }
+    }
 
     const toggleMenu = () => {
       isMenuOpen.value = !isMenuOpen.value;
-      if (isMenuOpen.value) isSearchOpen.value = false; 
+      if (isMenuOpen.value) isSearchOpen.value = false;
     };
 
     const toggleSearch = () => {
       isSearchOpen.value = !isSearchOpen.value;
-      if (isSearchOpen.value) isMenuOpen.value = false; 
+      if (isSearchOpen.value) isMenuOpen.value = false;
     };
 
     const closeMenu = () => isMenuOpen.value = false;
-    
-    const showHeader = ref(true); 
-    const isAtTop = ref(true);   
-    let lastScrollPosition = 0;  
+
+    const showHeader = ref(true);
+    const isAtTop = ref(true);
+    let lastScrollPosition = 0;
 
     const handleScroll = () => {
       const currentScrollPosition = window.scrollY;
@@ -125,7 +173,6 @@ export default {
       } else {
         showHeader.value = true;
       }
-
       lastScrollPosition = currentScrollPosition;
     };
 
@@ -137,16 +184,21 @@ export default {
       window.removeEventListener('scroll', handleScroll);
     });
 
-    return { 
+    return {
+      debounceTimeout,
+      handleSearch,
+      clearSearch,
+      goToProduct,
+      productStore,
       cartStore,
       router,
-      isMenuOpen, 
-      toggleMenu, 
-      query, 
-      closeMenu, 
-      isSearchOpen, 
+      isMenuOpen,
+      toggleMenu,
+      query,
+      closeMenu,
+      isSearchOpen,
       toggleSearch,
-      showHeader, 
+      showHeader,
       isAtTop
     };
   }
@@ -157,7 +209,7 @@ export default {
 /* ======= Base ======= */
 .site-header {
   width: 100%;
-  position: fixed; 
+  position: fixed;
   top: 0;
   z-index: 50;
   transition: transform 0.4s ease-in-out, background-color 0.4s ease;
@@ -184,7 +236,7 @@ export default {
 /* 2. Theme Light (Fond blanc, texte noir) - Activé au scroll ou via theme="light" */
 .header--solid .main-nav,
 .theme--light .main-nav {
-  background: rgba(255, 255, 255, 0.98); 
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -200,7 +252,7 @@ export default {
 
 /* 3. Theme Dark (Fond noir, texte blanc) - Activé via theme="dark" */
 .theme--dark .main-nav {
-  background: rgba(0, 0, 0, 0.98); 
+  background: rgba(0, 0, 0, 0.98);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.05);
@@ -233,7 +285,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.4s ease; 
+  transition: all 0.4s ease;
 }
 
 .logo {
@@ -256,7 +308,7 @@ export default {
 
 /* Mobile Search Toggle Button */
 .mobile-search-toggle {
-  display: none; 
+  display: none;
   background: none;
   border: none;
   cursor: pointer;

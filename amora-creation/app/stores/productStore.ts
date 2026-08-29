@@ -74,6 +74,8 @@ export const useProductStore = defineStore('product', () => {
   const currentProduct = ref<Product | null>(null)
   const categories = ref<Category[]>([])
   const collections = ref<Collection[]>([])
+  const searchResults = ref<Product[]>([])
+  const isSearching = ref<boolean>(false)
 
   const categoryWithProducts = ref<CategoryWithProducts | null>(null)
   const collectionWithProducts = ref<CollectionWithProducts | null>(null)
@@ -89,6 +91,32 @@ export const useProductStore = defineStore('product', () => {
   const collectionsError = ref<string | null>(null)
   const categoryProductsError = ref<string | null>(null)
   const collectionProductsError = ref<string | null>(null)
+
+  // actions
+  //
+
+  const searchProducts = async (query: string) => {
+    if (!query.trim()) {
+      searchResults.value = []
+      return
+    }
+
+    isSearching.value = true
+    error.value = null
+
+    try {
+      // Appel à l'API avec le paramètre ?search=
+      const response = await $api<PaginatedResponse<Product> | Product[]>(
+        `/product/products/?search=${encodeURIComponent(query)}`
+      )
+      searchResults.value = 'results' in response ? response.results : response;
+    } catch (err: any) {
+      console.error('Erreur lors de la recherche:', err)
+      // Optionnel : gérer une erreur spécifique à la recherche
+    } finally {
+      isSearching.value = false
+    }
+  }
 
   const fetchProducts = async () => {
     isLoading.value = true
@@ -232,6 +260,8 @@ export const useProductStore = defineStore('product', () => {
   const fetchProductsByCategories = fetchCategoryWithProducts
 
   return {
+    searchResults,
+    isSearching,
     products,
     currentProduct,
     categories,
@@ -248,6 +278,7 @@ export const useProductStore = defineStore('product', () => {
     categoryProductsError,
     collectionProductsLoading,
     collectionProductsError,
+    searchProducts,
     fetchProducts,
     fetchProductBySlug,
     fetchCategories,

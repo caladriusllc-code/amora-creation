@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Category, Collection, Product
@@ -31,6 +31,11 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = ProductSerializer
     lookup_field = 'slug'  # Récupère un produit via son slug (ex: /api/products/robe-d-ete/) au lieu de son ID
+
+    # Enable DRF search on the products endpoint, using the `?search=` query param.
+    filter_backends = [filters.SearchFilter]
+    # Searchable fields: product name, description, slug and related category/collection names
+    search_fields = ['name', 'description', 'slug', 'category__name', 'collection__name']
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
