@@ -116,8 +116,8 @@ export default {
         };
 
         const selectImage = (image: any) => {
-            emit('select', image);
-            isFocused.value = false;
+          emit('select', image);
+          isFocused.value = false;
         };
 
         return {
@@ -219,6 +219,7 @@ export default {
   padding: 16px;
   z-index: 50;
   max-height: 400px; /* Légèrement augmenté pour les grandes images */
+  max-width: 500px;
   overflow-y: auto;
 }
 

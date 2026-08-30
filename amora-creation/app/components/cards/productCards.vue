@@ -77,7 +77,7 @@ export default {
 }
 
 .image-wrapper {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1.2;
   position: relative;
   background-color: #f3f3f3;
   border-radius: 4px;

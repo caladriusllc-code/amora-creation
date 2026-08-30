@@ -306,16 +306,16 @@ onUnmounted(() => {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 64px 24px;
-  min-height: 100vh;
+  padding: 24px 8px;
+  /*min-height: 100vh;*/
   overflow-x: hidden;
 }
 
 .section-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 40px;
+  flex-direction: column;
+  gap:1rem;
+  margin-bottom: 24px;
 }
 
 .section-title {
@@ -376,5 +376,16 @@ onUnmounted(() => {
 .scrollbar-thumb:active {
   cursor: grabbing;
   background-color: #000000;
+}
+
+@media(min-width:768px){
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+
 }
 </style>

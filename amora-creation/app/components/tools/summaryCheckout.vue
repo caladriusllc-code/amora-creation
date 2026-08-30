@@ -20,7 +20,16 @@
                 
                 <div class="item-details">
                     <h5 class="item-name">{{ item.product.name }}</h5>
-                    <p class="item-variants">{{ item.product.size || 'Taille unique' }}</p>
+                    <p class="item-variants">{{ item.size.name || 'Taille unique' }}</p>
+                    <span v-if="item.color" class="item-color-info">
+                        <span
+                            v-if="item.color.hex_code"
+                            class="color-swatch"
+                            :style="{ backgroundColor: item.color.hex_code }"
+                            aria-hidden="true"
+                        ></span>
+                        Couleur : {{ item.color.name }}
+                    </span>
                 </div>
 
                 <div class="item-price">
@@ -199,4 +208,15 @@ h3 {
     font-weight: 700;
     color: #000;
 }
+
+.item-color-info { display: inline-flex; align-items: center; gap: 0.3rem; }
+.color-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
 </style>

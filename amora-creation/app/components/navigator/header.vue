@@ -140,7 +140,7 @@ export default {
     // ⚡️ NOUVEAU : Gère le clic sur un résultat de recherche
     const goToProduct = (product: any) => {
       if (product && product.slug) {
-        router.push(`/produits/${product.slug}`);
+        router.push(`/product/${product.slug}`);
         clearSearch();
         isSearchOpen.value = false;
       }
