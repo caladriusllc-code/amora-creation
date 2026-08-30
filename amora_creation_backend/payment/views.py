@@ -29,7 +29,8 @@ def decrement_product_stock(order):
     Lève une exception si un stock est insuffisant.
     """
     with db_transaction.atomic():
-        for item in order.items.all():  # ou order.orderitem_set.all()
+        # 👇 Remplacement de order.items.all() par order.order_items.all()
+        for item in order.order_items.all():  
             product = item.product
             if product.stock < item.quantity:
                 raise ValueError(
