@@ -63,11 +63,19 @@ class CartViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def add_item(self, request):
-        """Ajoute un produit au panier."""
+        """Ajoute un produit au panier avec vérification des stocks."""
         cart, session_id, is_new = self._get_or_create_cart(request)
         
         product_id = request.data.get('product_id')
-        quantity = int(request.data.get('quantity', 1))
+        # On sécurise la conversion en entier au cas où le frontend enverrait une chaîne
+        try:
+            quantity = int(request.data.get('quantity', 1))
+        except ValueError:
+            return Response(
+                {'error': 'La quantité doit être un nombre entier.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         size_id = request.data.get('size_id')
         color_id = request.data.get('color_id')
 
@@ -81,6 +89,28 @@ class CartViewSet(viewsets.ViewSet):
         size = get_object_or_404(Size, id=size_id) if size_id else None
         color = get_object_or_404(Color, id=color_id) if color_id else None
 
+        # ⚡️ 1. Vérification des stocks avant création
+        # On cherche si cet article précis est déjà dans le panier
+        existing_item = CartItem.objects.filter(
+            cart=cart, 
+            product=product, 
+            size=size, 
+            color=color
+        ).first()
+
+        # On calcule la quantité totale que l'utilisateur souhaite avoir au final
+        total_requested = quantity
+        if existing_item:
+            total_requested += existing_item.quantity
+
+        # On compare avec le stock absolu du produit principal
+        if total_requested > product.stock:
+            return Response(
+                {'error': f'Stock insuffisant. Il ne reste que {product.stock} exemplaire(s) disponible(s).'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ⚡️ 2. Ajout ou mise à jour si le stock est validé
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             product=product,

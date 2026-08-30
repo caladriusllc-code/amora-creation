@@ -20,7 +20,8 @@
                 
                 <div class="item-details">
                     <h5 class="item-name">{{ item.product.name }}</h5>
-                    <p class="item-variants">{{ item.size.name || 'Taille unique' }}</p>
+                    <!-- ⚡️ Sécurisation avec le chaînage optionnel (?.) -->
+                    <p class="item-variants">{{ item.size?.name || 'Taille unique' }}</p>
                     <span v-if="item.color" class="item-color-info">
                         <span
                             v-if="item.color.hex_code"
@@ -33,7 +34,8 @@
                 </div>
 
                 <div class="item-price">
-                    <p>{{ formatPrice(item.product.price * item.quantity) }}</p>
+                    <!-- ⚡️ Conversion numérique forcée pour éviter les erreurs NaN -->
+                    <p>{{ formatPrice((Number(item.product.price) || 0) * item.quantity) }}</p>
                 </div>
                 
             </div>
@@ -51,8 +53,10 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useCartStore } from '../../stores/cartStore'
+import { useRuntimeConfig } from '#app'
 
 const cartStore = useCartStore()
+const config = useRuntimeConfig()
 
 // --- COMPUTED PROPERTIES ---
 const cartItems = computed(() => cartStore.cart?.items || [])
@@ -60,7 +64,8 @@ const isGlobalLoading = computed(() => cartStore.isLoading)
 
 const cartTotal = computed(() => {
     if (cartStore.cart?.total) return cartStore.cart.total
-    return cartItems.value.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
+    // ⚡️ Conversion numérique appliquée ici aussi
+    return cartItems.value.reduce((total, item) => total + ((Number(item.product.price) || 0) * item.quantity), 0)
 })
 
 // --- MÉTHODES ---
@@ -73,7 +78,9 @@ const getCoverImage = (product: any) => {
     if (!imagePath) return 'https://via.placeholder.com/80'
     if (!imagePath.startsWith('http')) {
         const prefix = imagePath.startsWith('/') ? '' : '/'
-        return `http://localhost:8000${prefix}${imagePath}`
+        // ⚡️ Utilisation des variables d'environnement (avec fallback localhost)
+        const apiBase = config.public.apiBase || 'http://localhost:8000'
+        return `${apiBase}${prefix}${imagePath}`
     }
     return imagePath
 }

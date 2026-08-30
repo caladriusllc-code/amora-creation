@@ -8,8 +8,8 @@
         title="Nos produits les plus demandés"
         subtitle="Découvrez nos produits les plus demandés"
       />
-      <productGrid 
-        title="Soldes d'été"
+      <discountProductGrid 
+        title="Nos produits en soldes"
         subtitle="Découvrez nos produits en solde"
       />
     </main>
@@ -27,6 +27,7 @@ import heroSection from '../components/layout/heroSection.vue';
 import productsCategory from '../components/layout/ProductsCategory.vue'
 import collectionSection from '../components/layout/collectionSection.vue'
 import productGrid from '../components/layout/productGrid.vue';
+import discountProductGrid from '~/components/layout/discountProductGrid.vue';
 import footerSection from '~/components/layout/footerSection.vue';
 import cartModale from '../components/modale/cartModale.vue'
 
@@ -37,6 +38,7 @@ export default {
     collectionSection,
     productsCategory,
     productGrid,
+    discountProductGrid,
     footerSection,
     cartModale
   },

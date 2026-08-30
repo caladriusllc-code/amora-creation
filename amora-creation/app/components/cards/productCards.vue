@@ -1,7 +1,9 @@
 <template>
   <div class="pro-card">
     <div class="image-wrapper" @click="$emit('goToProductDetail')">
-      <span v-if="sale" class="sale-badge">Sale</span>
+      <!-- ⚡️ Affiche le pourcentage s'il est fourni sous forme de texte, sinon affiche "Sale" par défaut -->
+      <span v-if="sale" class="sale-badge">{{ typeof sale === 'string' ? sale : 'Sale' }}</span>
+      
       <img
         :src="image"
         :alt="name"
@@ -9,9 +11,8 @@
         @error="handleImageError"
       />
     </div>
-    <div
-      class="card-footer w-full flex flex-row items-center justify-between"
-    >
+    
+    <div class="card-footer w-full flex flex-row items-center justify-between">
       <div class="product-info">
         <h3 class="product-name">{{ name }}</h3>
         <p class="product-price">{{ formatPrice(price) }}</p>
@@ -36,8 +37,8 @@ export default {
   props: {
     image: String,
     name: String,
-    price: Number| String,
-    sale: Boolean,
+    price: [Number, String], 
+    sale: [Boolean, String], // ⚡️ Accepte désormais le booléen classique OU la string "-20%"
     isLoading: Boolean,
   },
   emits: ['addToCart', 'goToProductDetail'],

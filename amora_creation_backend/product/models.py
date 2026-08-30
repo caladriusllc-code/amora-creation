@@ -144,6 +144,8 @@ class Product(models.Model):
         verbose_name="Couleurs disponibles"
     )
 
+    stock = models.PositiveIntegerField(default=0, verbose_name="Stock total de la tenue")
+
     # Affichage et Visibilité
     is_active = models.BooleanField(default=True, verbose_name="Afficher sur la boutique")
     is_featured = models.BooleanField(default=False, verbose_name="Mettre en avant (Coup de cœur / Nouveauté)")
@@ -170,14 +172,9 @@ class Product(models.Model):
         return self.name
 
     @property
-    def total_stock(self):
-        """Calcule le stock total disponible en additionnant toutes les déclinaisons"""
-        return sum(variant.stock for variant in self.variants.all())
-
-    @property
     def is_in_stock(self):
         """Indique si au moins un exemplaire est disponible"""
-        return self.total_stock > 0
+        return self.stock > 0
 
 
 class ProductVariant(models.Model):

@@ -1,16 +1,18 @@
 <template>
-  <section class="product-section" id="grid-products">
+  <section class="product-section" id="grid-sale-products">
     <div class="section-header">
       <h2 class="section-title">{{ title }}</h2>
       <p class="section-subtitle">{{ subtitle }}</p>
     </div>
     
-    <div v-if="productStore.isLoading" class="loading-state">
+    <!-- ⚡️ Utilisation du nouvel état de chargement spécifique aux soldes -->
+    <div v-if="productStore.saleProductsLoading" class="loading-state">
       <skeleton />
     </div>
 
-    <div v-else-if="productStore.error" class="error-state">
-      <p>{{ productStore.error }}</p>
+    <!-- ⚡️ Utilisation du nouvel état d'erreur spécifique aux soldes -->
+    <div v-else-if="productStore.saleProductsError" class="error-state">
+      <p>{{ productStore.saleProductsError }}</p>
     </div>
 
     <div v-else class="cards-layout" ref="cardsContainer" @scroll="updateScrollbar">
@@ -22,14 +24,15 @@
         :image="product.image"
         :name="product.name"
         :price="product.price"
-        :sale="product.discount_percentage ? `-${product.discount_percentage}%` : false"
+        :sale="product.sale"
         :isLoading="loadingProductIds.has(product.id)"
         @addToCart="addToCart(product.id)"
         @goToProductDetail="goToProductDetail(product.slug)"
       />
     </div>
 
-    <div v-show="showScrollbar && !productStore.isLoading" class="custom-scrollbar-container">
+    <!-- Mise à jour de la condition pour la scrollbar -->
+    <div v-show="showScrollbar && !productStore.saleProductsLoading" class="custom-scrollbar-container">
       <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
         <div 
           class="scrollbar-thumb" 
@@ -50,76 +53,61 @@ import { useRouter } from 'vue-router';
 import { useProductStore } from '../../stores/productStore';
 import { useCartStore } from '../../stores/cartStore';
 
-// Définition des props
+// ⚡️ Adaptation des props par défaut pour les promotions
 interface Props {
   title?: string;
   subtitle?: string;
-  collectionId?: number | string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: "Produits de la collection",
-  subtitle: "Découvrez tous les produits de la collection",
-  collectionId: undefined,
+  title: "Produits en solde",
+  subtitle: "Profitez de nos offres exceptionnelles avant rupture de stock",
 });
 
-// Initialisation des stores et router
 const productStore = useProductStore();
 const cartStore = useCartStore();
 const router = useRouter();
 const loadingProductIds = ref<Set<string | number>>(new Set());
 
 // ------------------------------------------------------------------
-// ANIMATION AU SCROLL (Nouvelle logique)
+// ANIMATION AU SCROLL
 // ------------------------------------------------------------------
 let delayCounter = 0;
 let delayTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Directive Vue personnalisée
 const vScrollReveal = {
   mounted: (el: HTMLElement) => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // Applique un délai incrémental pour l'effet en cascade
             setTimeout(() => {
               entry.target.classList.add('is-visible');
-            }, delayCounter * 120); // 120ms entre chaque carte
+            }, delayCounter * 120);
 
             delayCounter++;
 
-            // Réinitialise le compteur quand la "vague" d'apparition est terminée
             if (delayTimer) clearTimeout(delayTimer);
             delayTimer = setTimeout(() => {
               delayCounter = 0;
             }, 50);
 
-            // Arrête d'observer l'élément une fois apparu (pour ne pas rejouer l'animation)
             observer.unobserve(entry.target);
           }
         });
       },
-      { 
-        threshold: 0.1 // L'animation se déclenche quand 10% de la carte est visible
-      }
+      { threshold: 0.1 }
     );
     observer.observe(el);
   }
 };
 
 // ------------------------------------------------------------------
-// FORMATAGE DES DONNÉES
+// FORMATAGE DES DONNÉES 
 // ------------------------------------------------------------------
 const formattedProducts = computed(() => {
-  let productsToShow = productStore.products;
-  
-  if (props.collectionId) {
-    productsToShow = productsToShow.filter(p => {
-      const productCollectionId = p.collection?.id || p.collection;
-      return productCollectionId === props.collectionId;
-    });
-  }
+  // ⚡️ On boucle désormais sur saleProducts
+  const productsToShow = productStore.saleProducts;
 
   return productsToShow.map(p => {
     let imageUrl = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
@@ -132,9 +120,11 @@ const formattedProducts = computed(() => {
       id: p.id,
       slug: p.slug,
       name: p.name,
+      // Le prix principal affiché devient le discount_price
       price: p.discount_price ? parseFloat(p.discount_price) : parseFloat(p.price),
       image: imageUrl,
-      sale: p.discount_price !== null && p.discount_price !== undefined
+      // On force l'étiquette sale à true puisque cette vue est dédiée aux promotions
+      sale: true 
     }
   });
 });
@@ -262,7 +252,8 @@ function goToProductDetail(slug: string) {
 let resizeObserver: ResizeObserver | null = null;
 
 onMounted(async () => {
-  await productStore.fetchProducts();
+  // ⚡️ Appel exclusif à la nouvelle route des soldes
+  await productStore.fetchSaleProducts();
 
   updateScrollbar();
   window.addEventListener('resize', updateScrollbar);
@@ -283,12 +274,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ------------------------------------------------------------------ */
-/* 🎭 STYLES D'ANIMATION DES CARTES                                   */
-/* ------------------------------------------------------------------ */
+/* Les styles restent identiques à ton composant d'origine */
 .reveal-item {
   opacity: 0;
-  /* La carte est légèrement poussée vers la droite/le bas avant d'apparaître */
   transform: translateY(20px) scale(0.95); 
   transition: opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), 
               transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -299,22 +287,18 @@ onUnmounted(() => {
   transform: translateY(0) scale(1);
 }
 
-/* ------------------------------------------------------------------ */
-/* STYLES EXISTANTS                                                   */
-/* ------------------------------------------------------------------ */
 .product-section {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
   padding: 24px 8px;
-  /*min-height: 100vh;*/
   overflow-x: hidden;
 }
 
 .section-header {
   display: flex;
   flex-direction: column;
-  gap:1rem;
+  gap: 1rem;
   margin-bottom: 24px;
 }
 
@@ -329,11 +313,12 @@ onUnmounted(() => {
   display: flex;
   gap: 24px;
   overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
 }
+
 .cards-layout::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: none; 
 }
 
 .custom-scrollbar-container {
@@ -379,13 +364,11 @@ onUnmounted(() => {
 }
 
 @media(min-width:768px){
-
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 40px;
   }
-
 }
 </style>

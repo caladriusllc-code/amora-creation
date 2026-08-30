@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Category, Collection, Product
 from .serializers import CategorySerializer, CollectionSerializer, ProductSerializer, CategoryDetailSerializer
+from django.db.models import F
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -36,6 +37,28 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter]
     # Searchable fields: product name, description, slug and related category/collection names
     search_fields = ['name', 'description', 'slug', 'category__name', 'collection__name']
+
+    @action(detail=False, methods=['get'], url_path='on-sale')
+    def on_sale(self, request):
+        """
+        API endpoint pour récupérer uniquement les produits en solde.
+        URL: /api/products/on-sale/
+        """
+        # 1. On filtre les produits qui ont un discount_price non nul
+        sale_products = self.get_queryset().filter(discount_price__isnull=False)
+        
+        # Optionnel : On peut aussi s'assurer que le prix réduit est bien inférieur au prix de base
+        sale_products = sale_products.filter(discount_price__lt=F('price'))
+
+        # 2. Gestion de la pagination (important s'il y a beaucoup de produits en solde)
+        page = self.paginate_queryset(sale_products)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # 3. Sérialisation et réponse
+        serializer = self.get_serializer(sale_products, many=True)
+        return Response(serializer.data)
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()

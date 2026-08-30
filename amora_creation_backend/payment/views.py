@@ -1,12 +1,8 @@
 # payment/views.py
 import json
 import requests  # pip install requests
-import zipfile
-import io
-import tempfile
-import os
 
-from django.http    import FileResponse
+from django.db import transaction as db_transaction
 from django.conf    import settings
 from django.shortcuts import get_object_or_404
 from django.db.models import F
@@ -26,6 +22,22 @@ from .serializers     import (
     PaymentInitiateSerializer,
     PaymentSimulateSerializer,
 )
+
+def decrement_product_stock(order):
+    """
+    Décrémente le stock des produits liés à la commande.
+    Lève une exception si un stock est insuffisant.
+    """
+    with db_transaction.atomic():
+        for item in order.items.all():  # ou order.orderitem_set.all()
+            product = item.product
+            if product.stock < item.quantity:
+                raise ValueError(
+                    f"Stock insuffisant pour {product.name} "
+                    f"(demande {item.quantity}, disponible {product.stock})"
+                )
+            product.stock -= item.quantity
+            product.save()
 
 # ─────────────────────────────────────────
 # INITIATE  —  POST /payment/initiate/
@@ -213,6 +225,7 @@ class PaymentSimulateView(APIView):
 # WEBHOOK  —  POST /payment/webhook/
 # ─────────────────────────────────────────
 
+
 @csrf_exempt
 @api_view(['POST'])
 @authentication_classes([])
@@ -266,8 +279,22 @@ def payment_webhook_view(request):
         order.status = Order.Status.PAID
         order.save(update_fields=['status'])
 
+        try:
+            decrement_product_stock(order)
+        except ValueError as e:
+            # En cas de stock insuffisant, on annule la transaction (on la passe en échec)
+            transaction.status = Transaction.TransactionStatus.FAILED
+            transaction.error_message = str(e)
+            transaction.save(update_fields=['status', 'error_message'])
+            # On peut aussi remettre la commande en PENDING ou autre, mais ici on laisse PAID
+            # (à toi de voir la politique métier)
+            return Response(
+                {'message': 'Paiement confirmé mais stock insuffisant, transaction annulée.'},
+                status=status.HTTP_200_OK
+            )
+
         return Response(
-            {'message': 'Paiement confirmé — téléchargement prêt.'},
+            {'message': 'Paiement confirmé.'},
             status=status.HTTP_200_OK
         )
 

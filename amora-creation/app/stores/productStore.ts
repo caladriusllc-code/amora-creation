@@ -51,6 +51,7 @@ export interface Product {
   description: string
   price: number | string
   discount_price?: number | string | null
+  discount_percentage?: number | null
   image?: string
   images?: ProductImage[]
   sizes?: Size[]
@@ -76,6 +77,9 @@ export const useProductStore = defineStore('product', () => {
   const collections = ref<Collection[]>([])
   const searchResults = ref<Product[]>([])
   const isSearching = ref<boolean>(false)
+  const saleProducts = ref<Product[]>([])
+  const saleProductsLoading = ref<boolean>(false)
+  const saleProductsError = ref<string | null>(null)
 
   const categoryWithProducts = ref<CategoryWithProducts | null>(null)
   const collectionWithProducts = ref<CollectionWithProducts | null>(null)
@@ -93,7 +97,21 @@ export const useProductStore = defineStore('product', () => {
   const collectionProductsError = ref<string | null>(null)
 
   // actions
-  //
+  
+  const fetchSaleProducts = async () => {
+    saleProductsLoading.value = true
+    saleProductsError.value = null
+
+    try {
+      const response = await $api<PaginatedResponse<Product> | Product[]>('/product/products/on-sale/')
+      saleProducts.value = 'results' in response ? response.results : response
+    } catch (err: any) {
+      saleProductsError.value = err?.data?.message || "Impossible de charger les produits en solde."
+      console.error('Erreur fetchSaleProducts:', err)
+    } finally {
+      saleProductsLoading.value = false
+    }
+  }
 
   const searchProducts = async (query: string) => {
     if (!query.trim()) {
@@ -268,6 +286,8 @@ export const useProductStore = defineStore('product', () => {
     collections,
     categoryWithProducts,
     collectionWithProducts,
+    saleProducts,
+    saleProductsLoading,
     isLoading,
     error,
     categoriesLoading,
@@ -287,5 +307,7 @@ export const useProductStore = defineStore('product', () => {
     fetchCollectionWithProducts,
     fetchProductsByCategories,
     inStockProducts,
+    saleProductsError,
+    fetchSaleProducts,
   }
 })

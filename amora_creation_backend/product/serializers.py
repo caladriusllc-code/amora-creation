@@ -40,21 +40,17 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         fields = ['id', 'size', 'color', 'sku', 'stock', 'price_override', 'active_price']
 
 class ProductSerializer(serializers.ModelSerializer):
-    # Imbrication pour récupérer toutes les données en une seule requête API
     category = CategorySerializer(read_only=True)
     collection = CollectionSerializer(read_only=True)
-    
-    # Imbrication des tailles et couleurs disponibles pour le produit
     sizes = SizeSerializer(many=True, read_only=True)
     colors = ColorSerializer(many=True, read_only=True)
-    
-    # On utilise related_name='images' et 'variants' définis dans les modèles
     images = ProductImageSerializer(many=True, read_only=True)
     variants = ProductVariantSerializer(many=True, read_only=True)
-    
-    # On expose les propriétés calculées pour faciliter la vie du frontend Vue.js
     total_stock = serializers.IntegerField(read_only=True)
     is_in_stock = serializers.BooleanField(read_only=True)
+    
+    # 👇 1. Déclarer le nouveau champ calculé
+    discount_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -62,9 +58,17 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'description', 'price', 'discount_price',
             'category', 'collection', 'is_active', 'is_featured',
             'meta_title', 'meta_description', 'created_at', 'updated_at',
-            # Relations et propriétés dynamiques
-            'images', 'variants', 'sizes', 'colors', 'total_stock', 'is_in_stock'
+            'images', 'variants', 'sizes', 'colors', 'stock', 'is_in_stock',
+            'discount_percentage', 'total_stock'
         ]
+
+    # 👇 3. Créer la méthode qui calcule la réduction (format get_nomduchamp)
+    def get_discount_percentage(self, obj):
+        if obj.discount_price and obj.price > 0:
+            # Calcul : ((Prix de base - Prix soldé) / Prix de base) * 100
+            percentage = ((obj.price - obj.discount_price) / obj.price) * 100
+            return int(percentage) # On retourne un entier net (ex: 20 pour 20%)
+        return None
 
 class CategoryDetailSerializer(CategorySerializer):
     """

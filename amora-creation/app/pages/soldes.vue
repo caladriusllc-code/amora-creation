@@ -1,38 +1,40 @@
 <template>
   <div class="page-container">
-    <Mainheader/>
-    <main>
-      <heroSection />
-      <productsCategory title="Catégories de produits"/>
-      <productGrid 
-        title="Nos produits les plus demandés"
-        subtitle="Découvrez nos produits les plus demandés"
-      />
-      <productGrid 
-        title="Soldes d'été"
-        subtitle="Découvrez nos produits en solde"
-      />
-    </main>
+    <Mainheader theme="black" @toggle-cart="toggleCart"/>
+    <div class="dis-section">
+      <discountProductGrid/>
+    </div>
     <footerSection/>
+    <cartModale/>
   </div>
 </template>
 
 <script lang="ts">
+import { ref } from 'vue';
 import Mainheader from '../components/navigator/header.vue'
-import heroSection from '../components/layout/heroSection.vue';
-import productsCategory from '../components/layout/ProductsCategory.vue'
-import collectionSection from '../components/layout/collectionSection.vue'
-import productGrid from '../components/layout/productGrid.vue';
+import discountProductGrid from '~/components/layout/discountProductGrid.vue';
 import footerSection from '~/components/layout/footerSection.vue';
+import cartModale from '~/components/modale/cartModale.vue';
 
 export default {
   components: {
     Mainheader,
-    heroSection,
-    collectionSection,
-    productsCategory,
-    productGrid,
-    footerSection
+    discountProductGrid,
+    footerSection,
+    cartModale
+  },
+  setup(){
+
+    const isCartOpen = ref<boolean>(false);
+
+    function toggleCart() {
+      isCartOpen.value = !isCartOpen.value;
+    }
+
+    return{
+      isCartOpen,
+      toggleCart
+    }
   }
 }
 </script>
@@ -41,5 +43,15 @@ export default {
 .page-container {
   background-color: #ffffff;
   min-height: 100vh;
+}
+
+.dis-section{
+  padding-top: 24px;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 </style>
