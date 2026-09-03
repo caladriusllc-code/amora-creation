@@ -24,6 +24,8 @@
         :image="product.image"
         :name="product.name"
         :price="product.price"
+        :base-price="product.basePrice"
+        :discount-price="product.discountPrice"
         :sale="product.sale"
         :isLoading="loadingProductIds.has(product.id)"
         @addToCart="addToCart(product.id)"
@@ -47,7 +49,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import ProductCards from '../cards/ProductCards.vue'; 
+import ProductCards from '../cards/productCards.vue'; 
 import skeleton from '../tools/skeleton.vue';
 import { useRouter } from 'vue-router';
 import { useProductStore } from '../../stores/productStore';
@@ -120,8 +122,10 @@ const formattedProducts = computed(() => {
       id: p.id,
       slug: p.slug,
       name: p.name,
+      basePrice: Number(p.price),
       // Le prix principal affiché devient le discount_price
-      price: p.discount_price ? parseFloat(p.discount_price) : parseFloat(p.price),
+      price: p.discount_price ? Number(p.discount_price) : Number(p.price),
+      discountPrice: p.discount_price ? Number(p.discount_price) : null,
       image: imageUrl,
       // On force l'étiquette sale à true puisque cette vue est dédiée aux promotions
       sale: true 

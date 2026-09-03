@@ -22,6 +22,8 @@
         :image="product.image"
         :name="product.name"
         :price="product.price"
+        :base-price="product.basePrice"
+        :discount-price="product.discountPrice"
         :sale="product.discount_percentage ? `-${product.discount_percentage}%` : false"
         :isLoading="loadingProductIds.has(product.id)"
         @addToCart="addToCart(product.id)"
@@ -132,7 +134,9 @@ const formattedProducts = computed(() => {
       id: p.id,
       slug: p.slug,
       name: p.name,
-      price: p.discount_price ? parseFloat(p.discount_price) : parseFloat(p.price),
+      basePrice: Number(p.price),
+      price: p.discount_price ? Number(p.discount_price) : Number(p.price),
+      discountPrice: p.discount_price ? Number(p.discount_price) : null,
       image: imageUrl,
       sale: p.discount_price !== null && p.discount_price !== undefined
     }

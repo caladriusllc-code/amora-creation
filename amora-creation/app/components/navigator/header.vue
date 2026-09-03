@@ -18,11 +18,11 @@
       <div class="logo" @click="()=>{router.push('/')}">Amora.</div>
 
       <ul class="nav-links">
-        <li><NuxtLink to="/" exact-active-class="active-link">Accueil</NuxtLink></li>
-        <li><NuxtLink to="/collection" active-class="active-link">Collection</NuxtLink></li>
-        <li><NuxtLink to="/categories" active-class="active-link">Categories</NuxtLink></li>
-        <li><NuxtLink to="/soldes" active-class="active-link">Soldes</NuxtLink></li>
-        <li><NuxtLink to="/tendances" active-class="active-link">A propos</NuxtLink></li>
+        <li><NuxtLink to="/" :class="{ 'active-link': isNavLinkActive('/') }">Accueil</NuxtLink></li>
+        <li><NuxtLink to="/collection" :class="{ 'active-link': isNavLinkActive('/collection') }">Collection</NuxtLink></li>
+        <li><NuxtLink to="/categories" :class="{ 'active-link': isNavLinkActive('/categories') }">Categories</NuxtLink></li>
+        <li><NuxtLink to="/soldes" :class="{ 'active-link': isNavLinkActive('/soldes') }">Soldes</NuxtLink></li>
+        <li><NuxtLink to="/tendances" :class="{ 'active-link': isNavLinkActive('/tendances') }">A propos</NuxtLink></li>
       </ul>
 
       <div class="nav-actions">
@@ -76,10 +76,10 @@
     <transition name="menu-slide">
       <div v-if="isMenuOpen" class="mobile-menu">
         <ul class="mobile-nav-links">
-          <li @click="closeMenu"><NuxtLink to="/collection" active-class="active-link">Collection</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/categories" active-class="active-link">Categories</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/soldes" active-class="active-link">Soldes</NuxtLink></li>
-          <li @click="closeMenu"><NuxtLink to="/tendances" active-class="active-link">A propos</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/collection" :class="{ 'active-link': isNavLinkActive('/collection') }">Collection</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/categories" :class="{ 'active-link': isNavLinkActive('/categories') }">Categories</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/soldes" :class="{ 'active-link': isNavLinkActive('/soldes') }">Soldes</NuxtLink></li>
+          <li @click="closeMenu"><NuxtLink to="/tendances" :class="{ 'active-link': isNavLinkActive('/tendances') }">A propos</NuxtLink></li>
         </ul>
       </div>
     </transition>
@@ -88,7 +88,7 @@
 
 <script lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useCartStore } from '../../stores/cartStore'
 import { useProductStore } from '~/stores/productStore';
@@ -109,6 +109,7 @@ export default {
   setup() {
     const cartStore = useCartStore();
     const productStore = useProductStore();
+    const route = useRoute();
     const router = useRouter();
 
     const isMenuOpen = ref(false);
@@ -158,6 +159,11 @@ export default {
 
     const closeMenu = () => isMenuOpen.value = false;
 
+    const isNavLinkActive = (path: string) => {
+      if (path === '/') return route.path === '/';
+      return route.path === path || route.path.startsWith(`${path}/`);
+    };
+
     const showHeader = ref(true);
     const isAtTop = ref(true);
     let lastScrollPosition = 0;
@@ -191,6 +197,7 @@ export default {
       goToProduct,
       productStore,
       cartStore,
+      isNavLinkActive,
       router,
       isMenuOpen,
       toggleMenu,
