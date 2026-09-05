@@ -15,8 +15,10 @@
     <div class="card-footer w-full flex flex-row items-center justify-between">
       <div class="product-info">
         <h3 class="product-name">{{ name }}</h3>
-        <p v-if="hasDiscount" class="product-base-price">{{ formatPrice(basePrice) }}</p>
-        <p class="product-price">{{ formatPrice(displayPrice) }}</p>
+        <div class="price flex items-center justify-between gap-4">
+          <p class="product-price">{{ formatPrice(displayPrice) }}</p>
+          <p v-if="hasDiscount" class="product-base-price">{{ formatPrice(basePrice) }}</p>
+        </div>
       </div>
       <cart-button
         @click="$emit('addToCart')"
@@ -145,10 +147,11 @@ export default {
 }
 
 .product-name {
-  font-weight: 700;
+  font-weight: 500;
   color: #111827;
   margin: 0 0 4px 0;
-  font-size: 17px;
+  font-size: 16px;
+  text-align: start;
 }
 
 .product-price {

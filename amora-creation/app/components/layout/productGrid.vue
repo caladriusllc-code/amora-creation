@@ -29,6 +29,13 @@
         @addToCart="addToCart(product.id)"
         @goToProductDetail="goToProductDetail(product.slug)"
       />
+
+      <moreProductButton 
+        v-if="showDiscoverMore" 
+        type="button" 
+        aria-label="Découvrir plus de produits"
+        @click="goToDiscoverMore"
+      />
     </div>
 
     <div v-show="showScrollbar && !productStore.isLoading" class="custom-scrollbar-container">
@@ -46,23 +53,29 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import ProductCards from '../cards/ProductCards.vue'; 
-import skeleton from '../tools/skeleton.vue';
 import { useRouter } from 'vue-router';
 import { useProductStore } from '../../stores/productStore';
 import { useCartStore } from '../../stores/cartStore';
+
+import ProductCards from '../cards/ProductCards.vue'; 
+import skeleton from '../tools/skeleton.vue';
+import moreProductButton from '../buttons/moreProductButton.vue';
 
 // Définition des props
 interface Props {
   title?: string;
   subtitle?: string;
   collectionId?: number | string;
+  maxProducts?: number;
+  showDiscoverMore?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: "Produits de la collection",
   subtitle: "Découvrez tous les produits de la collection",
   collectionId: undefined,
+  maxProducts: undefined,
+  showDiscoverMore: false,
 });
 
 // Initialisation des stores et router
@@ -123,7 +136,11 @@ const formattedProducts = computed(() => {
     });
   }
 
-  return productsToShow.map(p => {
+  const limitedProducts = props.maxProducts
+    ? productsToShow.slice(0, props.maxProducts)
+    : productsToShow;
+
+  return limitedProducts.map(p => {
     let imageUrl = 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
     if (p.images && p.images.length > 0) {
       const mainImg = p.images.find(img => img.is_main);
@@ -262,6 +279,10 @@ function goToProductDetail(slug: string) {
   router.push(`/product/${slug}`);
 }
 
+function goToDiscoverMore() {
+  router.push('/tendances');
+}
+
 // Lifecycle hooks
 let resizeObserver: ResizeObserver | null = null;
 
@@ -331,6 +352,7 @@ onUnmounted(() => {
 
 .cards-layout {
   display: flex;
+  align-items: center;
   gap: 24px;
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
@@ -338,6 +360,42 @@ onUnmounted(() => {
 }
 .cards-layout::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+.discover-more-card {
+  flex: 0 0 280px;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #111827;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.discover-more-card:hover,
+.discover-more-card:focus-visible {
+  border-color: #111827;
+  background: #f3f4f6;
+  transform: translateY(-4px);
+}
+
+.discover-more-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
 }
 
 .custom-scrollbar-container {
