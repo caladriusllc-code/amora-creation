@@ -155,7 +155,7 @@ export default {
 }
 
 .product-price {
-  font-weight: 900;
+  font-weight: 600;
   color: #111827;
   font-size: 20px;
   margin: 0;

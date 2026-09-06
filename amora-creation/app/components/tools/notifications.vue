@@ -1,21 +1,17 @@
 <template>
   <Transition name="slide-fade">
     <div v-if="isVisible" class="notification-popup">
-      <div class="unread-indicator"></div>
       
       <div class="notif-icon-container">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D4B46" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="8.5" cy="7" r="4"></circle>
-          <polyline points="17 11 19 13 23 9"></polyline>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
         </svg>
       </div>
 
       <div class="notif-content">
         <p class="notif-text">
-          {{ actionText }} <strong>{{ userName }}</strong>
+          {{ actionText }} 
         </p>
-        <span class="notif-time">{{ time }}</span>
       </div>
 
       <button class="close-btn" @click="closePopup" aria-label="Fermer">
@@ -29,53 +25,74 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 
 export default {
     name: 'NotificationPopup',
     props:{
+        visible: {
+            type: Boolean,
+            default: false
+        },
         userName: {
             type: String,
             default: 'Olamina'
         },
         actionText: {
             type: String,
-            default: 'Un nouveau contrat a été créé par'
-        },
-        time: {
-            type: String,
-            default: 'à l\'instant'
+            default: 'Un article ajouté au panier'
         },
         duration: {
             type: Number,
-            default: 20000 // Disparaît après 5 secondes (mettre 0 pour la garder indéfiniment)
+            default: 2000
         }
     },
 
     emits: ['close'],
     setup(props, {emit}){
+      const isVisible = ref(props.visible);
+      let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-        const isVisible = ref(true);
-
-        const closePopup = () => {
-        isVisible.value = false;
-        // On prévient le composant parent qu'elle est fermée
-        setTimeout(() => emit('close'), 300); 
-        };
-
-        // Fermeture automatique
-        onMounted(() => {
-            if (props.duration > 0) {
-                setTimeout(() => {
-                //closePopup();
-                }, props.duration);
-            }
-        });
-
-        return {
-            isVisible,
-            closePopup
+      const closePopup = () => {
+        if (closeTimer) {
+          clearTimeout(closeTimer);
+          closeTimer = null;
         }
+
+        isVisible.value = false;
+        emit('close');
+      };
+
+      watch(
+        () => props.visible,
+        (value) => {
+          isVisible.value = value;
+
+          if (!value) {
+            if (closeTimer) {
+              clearTimeout(closeTimer);
+              closeTimer = null;
+            }
+            return;
+          }
+
+          if (closeTimer) {
+            clearTimeout(closeTimer);
+          }
+
+          if (props.duration > 0) {
+            closeTimer = setTimeout(() => {
+              closePopup();
+            }, props.duration);
+          }
+        },
+        { immediate: true }
+      );
+
+      return {
+        isVisible,
+        closePopup
+      }
     }
 }
 
@@ -93,8 +110,7 @@ export default {
   right: 24px;
   width: 380px;
   max-width: calc(100vw - 48px);
-  background-color: #2D4B46; /* Vert foncé de ton image */
-  border: 1px solid #3A5F59;
+  background-color: #f4f8f7; /* Vert foncé de ton image */
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -105,25 +121,13 @@ export default {
   font-family: sans-serif;
 }
 
-/* Le petit point bleu */
-.unread-indicator {
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  background-color: #3B82F6;
-  border-radius: 50%;
-}
-
 /* Conteneur de l'icône */
 .notif-icon-container {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #26423E;
-  border: 1px solid #3A5F59;
+  background-color: none;
+  border: 1px solid #111827;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +145,7 @@ export default {
 
 .notif-text {
   font-size: 14px;
-  color: #E5E7EB;
+  color: #111827;
   margin: 0;
   line-height: 1.4;
 }
@@ -172,7 +176,7 @@ export default {
 
 .close-btn:hover {
   color: #FFFFFF;
-  background-color: #3A635E;
+  background-color: #111827;
 }
 
 /* Animations d'apparition et disparition */
@@ -185,5 +189,22 @@ export default {
 .slide-fade-leave-to {
   transform: translateX(50px);
   opacity: 0;
+}
+
+/* Animation de l'icône (effet cloche avec rebond) */
+@keyframes ring-bounce {
+  0% { transform: scale(0.8) rotate(0); }
+  20% { transform: scale(1.1) rotate(-15deg); }
+  40% { transform: scale(1.1) rotate(15deg); }
+  60% { transform: scale(1) rotate(-10deg); }
+  80% { transform: scale(1) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.notif-icon-container svg {
+  /* Le point de pivot en haut donne un mouvement naturel de balancier */
+  transform-origin: top center; 
+  /* Le délai de 0.1s permet à la popup d'entrer avant que l'icône ne s'anime */
+  animation: ring-bounce 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both;
 }
 </style>

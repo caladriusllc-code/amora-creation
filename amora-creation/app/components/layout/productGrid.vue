@@ -76,6 +76,8 @@ const props = withDefaults(defineProps<Props>(), {
   showDiscoverMore: false,
 });
 
+const emits = defineEmits(['addToCart'])
+
 // Initialisation des stores et router
 const productStore = useProductStore();
 const cartStore = useCartStore();
@@ -219,6 +221,7 @@ async function addToCart(id: string | number) {
 
   try {
     await cartStore.addToCart(id, 1);
+    emits('addToCart')
   } catch (error){
     console.error("Erreur lors de la récupération du panier:", error);
   } finally {
@@ -281,7 +284,7 @@ onUnmounted(() => {
 /* ------------------------------------------------------------------ */
 .product-section {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 24px 8px;
   /*min-height: 100vh;*/
@@ -417,6 +420,10 @@ onUnmounted(() => {
 }
 
 @media(min-width: 1024px){
+
+  .product-section{
+    padding: 24px 16px;
+  }
 
   .cards-layout {
     display: grid;

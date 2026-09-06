@@ -62,6 +62,9 @@ import { useProductStore } from '../../stores/productStore'
 import { useCartStore } from '~/stores/cartStore'
 import ProductCards from '../cards/productCards.vue'
 
+
+const emits = defineEmits(['addToCart'])
+
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
@@ -105,7 +108,8 @@ const addToCart = async (productId: number | string) => {
   loadingProductIds.value = nextLoadingIds
 
   try {
-    await cartStore.addToCart(productId)
+    await cartStore.addToCart(productId);
+    emits('addToCart');
   } catch (error) {
     console.error("Erreur lors de l'ajout au panier", error)
   } finally {
