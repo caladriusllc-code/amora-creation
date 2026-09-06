@@ -7,7 +7,7 @@
       <productGrid 
         title="Nos produits les plus demandés"
         subtitle="Découvrez nos produits les plus demandés"
-        :max-products="4"
+        :max-products="7"
         show-discover-more
       />
       <discountProductGrid 

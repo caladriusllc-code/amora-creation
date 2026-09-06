@@ -13,7 +13,7 @@ export default {
   props:{
     label:{
       type:String,
-      default: "Voir collection"
+      default: "Voir plus collection"
     }
   }
 
@@ -34,6 +34,8 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 1rem;
   transition: ease-in-out 0.5s;
 }

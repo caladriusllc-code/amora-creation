@@ -43,8 +43,6 @@
         <div
           class="scrollbar-thumb"
           :style="{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }"
-          @mousedown.prevent="startDrag"
-          @touchstart="startDrag"
         ></div>
       </div>
     </div>
@@ -211,51 +209,6 @@ const handleTrackClick = (e: MouseEvent) => {
   });
 };
 
-let isDragging = false;
-let startX = 0;
-let startScrollLeft = 0;
-
-const handleDrag = (e: MouseEvent | TouchEvent) => {
-  if (!isDragging || !cardsContainer.value || !trackRef.value) return;
-
-  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-  const deltaX = clientX - startX;
-
-  const trackWidth = trackRef.value.clientWidth;
-  const container = cardsContainer.value;
-  const maxScrollLeft = container.scrollWidth - container.clientWidth;
-
-  const thumbWidthPx = (thumbWidth.value / 100) * trackWidth;
-  const thumbScrollRange = trackWidth - thumbWidthPx;
-
-  if (thumbScrollRange <= 0) return;
-
-  const ratio = deltaX / thumbScrollRange;
-  container.scrollLeft = startScrollLeft + ratio * maxScrollLeft;
-};
-
-const stopDrag = () => {
-  isDragging = false;
-  window.removeEventListener('mousemove', handleDrag);
-  window.removeEventListener('touchmove', handleDrag);
-  window.removeEventListener('mouseup', stopDrag);
-  window.removeEventListener('touchend', stopDrag);
-};
-
-const startDrag = (e: MouseEvent | TouchEvent) => {
-  isDragging = true;
-  const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-  startX = clientX;
-  if (cardsContainer.value) {
-    startScrollLeft = cardsContainer.value.scrollLeft;
-  }
-
-  window.addEventListener('mousemove', handleDrag);
-  window.addEventListener('touchmove', handleDrag, { passive: true });
-  window.addEventListener('mouseup', stopDrag);
-  window.addEventListener('touchend', stopDrag);
-};
-
 // ------------------------------------------------------------------
 // ACTIONS PRODUITS
 // ------------------------------------------------------------------
@@ -303,7 +256,6 @@ onUnmounted(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
-  stopDrag();
 });
 </script>
 
@@ -404,6 +356,12 @@ onUnmounted(() => {
     padding: 0 16px;
 }
 
+@media (min-width: 1024px) {
+  .custom-scrollbar-container {
+    display: none;
+  }
+}
+
 .scrollbar-track {
     width: 100%;
     height: 4px;
@@ -456,5 +414,13 @@ onUnmounted(() => {
     margin-bottom: 40px;
   }
 
+}
+
+@media(min-width: 1024px){
+
+  .cards-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
 }
 </style>
