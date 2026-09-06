@@ -1,9 +1,15 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from .models import Category, Collection, Product
 from .serializers import CategorySerializer, CollectionSerializer, ProductSerializer, CategoryDetailSerializer
 from django.db.models import F
+
+
+class ProductPagination(PageNumberPagination):
+    page_size = 12
+
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -31,6 +37,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         'images', 'variants', 'variants__size', 'variants__color'
     )
     serializer_class = ProductSerializer
+    pagination_class = ProductPagination
     lookup_field = 'slug'  # Récupère un produit via son slug (ex: /api/products/robe-d-ete/) au lieu de son ID
 
     # Enable DRF search on the products endpoint, using the `?search=` query param.

@@ -15,7 +15,10 @@
     <div class="card-footer w-full flex flex-row items-center justify-between">
       <div class="product-info">
         <h3 class="product-name">{{ name }}</h3>
-        <p class="product-price">{{ formatPrice(price) }}</p>
+        <div class="price flex items-center justify-between gap-4">
+          <p class="product-price">{{ formatPrice(displayPrice) }}</p>
+          <p v-if="hasDiscount" class="product-base-price">{{ formatPrice(basePrice) }}</p>
+        </div>
       </div>
       <cart-button
         @click="$emit('addToCart')"
@@ -26,6 +29,7 @@
 </template>
 
 <script>
+import { computed } from 'vue';
 import cartButton from '../buttons/cartButton.vue';
 import { useCartStore } from '../../stores/cartStore';
 
@@ -38,12 +42,22 @@ export default {
     image: String,
     name: String,
     price: [Number, String], 
+    basePrice: [Number, String],
+    discountPrice: [Number, String],
     sale: [Boolean, String], // ⚡️ Accepte désormais le booléen classique OU la string "-20%"
     isLoading: Boolean,
   },
   emits: ['addToCart', 'goToProductDetail'],
   setup(props) {
     const cartStore = useCartStore();
+    const displayPrice = computed(() => {
+      return props.discountPrice !== null && props.discountPrice !== undefined
+        ? props.discountPrice
+        : props.price;
+    });
+    const hasDiscount = computed(() => {
+      return props.discountPrice !== null && props.discountPrice !== undefined;
+    });
 
     const formatPrice = (amount) => {
       return new Intl.NumberFormat('fr-FR', {
@@ -61,6 +75,8 @@ export default {
 
     return {
       cartStore,
+      hasDiscount,
+      displayPrice,
       formatPrice,
       handleImageError,
     };
@@ -131,10 +147,11 @@ export default {
 }
 
 .product-name {
-  font-weight: 700;
+  font-weight: 500;
   color: #111827;
   margin: 0 0 4px 0;
-  font-size: 17px;
+  font-size: 16px;
+  text-align: start;
 }
 
 .product-price {
@@ -142,5 +159,12 @@ export default {
   color: #111827;
   font-size: 20px;
   margin: 0;
+}
+
+.product-base-price {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 2px;
+  text-decoration: line-through;
 }
 </style>

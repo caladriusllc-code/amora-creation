@@ -53,6 +53,8 @@
           :image="getProductImage(product)"
           :name="product.name"
           :price="product.price"
+          :base-price="product.price"
+          :discount-price="product.discount_price"
           :sale="!!product.discount_price"
           :isLoading="loadingProductIds.has(product.id)"
           @addToCart="addToCart(product.id)"
