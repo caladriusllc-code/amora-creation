@@ -17,14 +17,14 @@
         </div>
 
         <div id="grid-products" class="collection-section">
-            
+
             <skeleton v-if="isLoading || productStore.isLoading" />
 
             <productGrid
-                v-show="featuredCollection && !isLoading && !productStore.isLoading" 
-                :collection-id="featuredCollection?.id" 
+                v-show="featuredCollection && !isLoading && !productStore.isLoading"
+                :collection-id="featuredCollection?.id"
             />
-            
+
         </div>
     </section>
 </template>
@@ -115,12 +115,12 @@ export default {
     justify-content: center;
     align-items: center;
     width: 100%;
-    height: 70vh; 
-    min-height: 400px; 
-    background-size: cover; 
-    background-position: center; 
+    height: 70vh;
+    min-height: 400px;
+    background-size: cover;
+    background-position: center;
     background-repeat: no-repeat;
-    position: relative; 
+    position: relative;
 }
 
 .collection-section {
@@ -222,14 +222,14 @@ export default {
 @media (max-width: 768px) {
     .pic-background {
         height: 80vh;
-        min-height: 300px; 
+        min-height: 300px;
     }
-    
+
     .skeleton-title {
         width: 80%;
         height: 2.5rem;
     }
-    
+
     .skeleton-subtitle {
         width: 60%;
     }

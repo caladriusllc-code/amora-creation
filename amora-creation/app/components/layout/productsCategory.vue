@@ -268,8 +268,7 @@ export default {
 
 .section-title {
   font-size: 30px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-weight: 500;
   margin: 0;
 }
 

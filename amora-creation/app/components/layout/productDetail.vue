@@ -45,6 +45,8 @@
 
             <productSizes :sizes="product.sizes" @size-selected="onSizeSelected" />
             <productColors :colors="product.colors" @color-selected="onColorSelected" />
+
+            <span>En stock</span>
         </div>
 
     </div>
@@ -267,6 +269,7 @@ export default {
    ========================================= */
 
 .product-detail-layout {
+    padding-top:2rem;
     display: flex;
     flex-direction: column;
     width: 100%;

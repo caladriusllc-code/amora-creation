@@ -215,7 +215,7 @@ const getPlaceholderImage = (name: string): string => {
 
 .section-title {
   font-size: clamp(2rem, 4vw, 2.5rem); /* Taille responsive fluide */
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-main);
   margin-bottom: var(--spacing-base);
   letter-spacing: -0.02em;
