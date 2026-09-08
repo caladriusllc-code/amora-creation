@@ -22,7 +22,7 @@
         <li><NuxtLink to="/collection" :class="{ 'active-link': isNavLinkActive('/collection') }">Collection</NuxtLink></li>
         <li><NuxtLink to="/categories" :class="{ 'active-link': isNavLinkActive('/categories') }">Categories</NuxtLink></li>
         <li><NuxtLink to="/soldes" :class="{ 'active-link': isNavLinkActive('/soldes') }">Soldes</NuxtLink></li>
-        <li><NuxtLink to="/tendances" :class="{ 'active-link': isNavLinkActive('/tendances') }">A propos</NuxtLink></li>
+        <li><NuxtLink to="/about" :class="{ 'active-link': isNavLinkActive('/about') }">A propos</NuxtLink></li>
       </ul>
 
       <div class="nav-actions">
