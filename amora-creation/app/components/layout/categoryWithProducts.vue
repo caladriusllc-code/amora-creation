@@ -60,6 +60,8 @@
           @addToCart="addToCart(product.id)"
           @goToProductDetail="goToProductDetail(product.slug)"
         />
+
+        <Paginator />
       </div>
 
     </div>
@@ -87,6 +89,7 @@ import { useCartStore } from '~/stores/cartStore'
 import CategoryList from '../tools/categoryList.vue'
 import ProductCards from '../cards/productCards.vue'
 import notifications from '../tools/notifications.vue'
+import Paginator from '../tools/Paginator.vue'
 
 // 2. Initialisation
 const route = useRoute()

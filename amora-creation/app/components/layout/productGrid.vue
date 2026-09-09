@@ -236,7 +236,7 @@ function goToProductDetail(slug: string) {
 }
 
 function goToDiscoverMore() {
-  router.push('/tendances');
+  router.push('/collections');
 }
 
 // Lifecycle hooks

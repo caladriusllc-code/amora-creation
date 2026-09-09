@@ -2,10 +2,10 @@
   <div class="page-container">
     <Mainheader theme="black" @toggle-cart="toggleCart"/>
     <div class="dis-section">
-      <discountProductGrid @addToCart="showNotificationPopup"/>
+      <discountProductGrid @addToCart="handleProductAdded"/>
     </div>
     <footerSection/>
-    <cartModale/>
+    <cartModale :isOpen="isCartOpen" @close="toggleCart"/>
     <notifications
       :key="notificationKey"
       :visible="showNotification"
@@ -38,6 +38,11 @@ export default {
       isCartOpen.value = !isCartOpen.value;
     }
 
+    function handleProductAdded() {
+      isCartOpen.value = true;
+      showNotificationPopup();
+    }
+
     // ManageNotifications
 
     const showNotification = ref<boolean>(false);
@@ -66,6 +71,7 @@ export default {
       notificationKey,
       notificationTimer,
       toggleCart,
+      handleProductAdded,
       showNotificationPopup
     }
   }

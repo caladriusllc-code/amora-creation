@@ -44,13 +44,19 @@
         ></div>
       </div>
     </div>
+    <notifications
+      :key="notificationKey"
+      :visible="showNotification"
+      @close="showNotification = false"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import ProductCards from '../cards/productCards.vue'; 
 import skeleton from '../tools/skeleton.vue';
+import notifications from '../tools/notifications.vue'
 import { useRouter } from 'vue-router';
 import { useProductStore } from '../../stores/productStore';
 import { useCartStore } from '../../stores/cartStore';
@@ -234,6 +240,28 @@ const startDrag = (e: MouseEvent | TouchEvent) => {
 // ------------------------------------------------------------------
 // ACTIONS PRODUITS
 // ------------------------------------------------------------------
+
+const showNotification = ref<boolean>(false);
+const notificationKey = ref<number>(0);
+let notificationTimer: ReturnType<typeof setTimeout> | null = null;
+
+
+function showNotificationPopup(){
+  if (notificationTimer) {
+    clearTimeout(notificationTimer);
+  }
+
+  notificationKey.value += 1;
+  showNotification.value = false;
+
+  nextTick(() => {
+    showNotification.value = true;
+    notificationTimer = setTimeout(() => {
+      showNotification.value = false;
+    }, 2500);
+  });
+}
+
 async function addToCart(id: string | number) {
   const nextLoadingIds = new Set(loadingProductIds.value);
   nextLoadingIds.add(id);
@@ -241,6 +269,7 @@ async function addToCart(id: string | number) {
 
   try {
     await cartStore.addToCart(id, 1);
+    showNotificationPopup();
     emits ('addToCart')
   } catch (error){
     console.error("Erreur lors de la récupération du panier:", error);

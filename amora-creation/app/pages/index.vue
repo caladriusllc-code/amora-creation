@@ -9,11 +9,12 @@
         subtitle="Découvrez nos produits les plus demandés"
         :max-products="7"
         show-discover-more
-        @add-to-cart="showNotificationPopup"
+        @add-to-cart="handleProductAdded"
       />
       <discountProductGrid 
         title="Nos produits en soldes"
         subtitle="Découvrez nos produits en solde"
+        @add-to-cart="handleProductAdded"
       />
     </main>
     <footerSection/>
@@ -62,6 +63,11 @@ export default {
       isCartOpen.value = !isCartOpen.value;
     }
 
+    function handleProductAdded() {
+      isCartOpen.value = true;
+      showNotificationPopup();
+    }
+
     function showNotificationPopup(){
       if (notificationTimer) {
         clearTimeout(notificationTimer);
@@ -83,6 +89,7 @@ export default {
       showNotification,
       notificationKey,
       toggleCart,
+      handleProductAdded,
       showNotificationPopup
     }
   }
