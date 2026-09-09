@@ -31,20 +31,20 @@ export default {
     name: 'NotificationPopup',
     props:{
         visible: {
-            type: Boolean,
-            default: false
+          type: Boolean,
+          default: false
         },
         userName: {
-            type: String,
-            default: 'Olamina'
+          type: String,
+          default: 'Olamina'
         },
         actionText: {
-            type: String,
-            default: 'Un article ajouté au panier'
+          type: String,
+          default: 'Un article ajouté au panier'
         },
         duration: {
-            type: Number,
-            default: 2000
+          type: Number,
+          default: 2000
         }
     },
 

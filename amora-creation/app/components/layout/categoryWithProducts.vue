@@ -63,12 +63,19 @@
       </div>
 
     </div>
+
+    <notifications
+      :key="notificationKey"
+      :visible="showNotification"
+      @close="showNotification = false"
+    />
+
   </section>
 </template>
 
 <script setup lang="ts">
 // 1. Imports
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRuntimeConfig } from '#app'
 
@@ -79,6 +86,7 @@ import { useCartStore } from '~/stores/cartStore'
 // Composants
 import CategoryList from '../tools/categoryList.vue'
 import ProductCards from '../cards/productCards.vue'
+import notifications from '../tools/notifications.vue'
 
 // 2. Initialisation
 const route = useRoute()
@@ -132,12 +140,35 @@ const goToProductDetail = (slug: string) => {
   router.push(`/product/${slug}`)
 }
 
+// ManageNotifications
+
+const showNotification = ref<boolean>(false);
+const notificationKey = ref<number>(0);
+let notificationTimer: ReturnType<typeof setTimeout> | null = null;
+
+function showNotificationPopup(){
+      if (notificationTimer) {
+        clearTimeout(notificationTimer);
+      }
+
+      notificationKey.value += 1;
+      showNotification.value = false;
+
+      nextTick(() => {
+        showNotification.value = true;
+        notificationTimer = setTimeout(() => {
+          showNotification.value = false;
+        }, 2500);
+      });
+    }
+
 const addToCart = async (productId: number | string) => {
   const nextLoadingIds = new Set(loadingProductIds.value)
   nextLoadingIds.add(productId)
   loadingProductIds.value = nextLoadingIds
   try {
     await cartStore.addToCart(productId)
+    showNotificationPopup();
     console.log(`Produit ${productId} ajouté au panier !`)
   } catch (error) {
     console.error("Erreur lors de l'ajout au panier", error)

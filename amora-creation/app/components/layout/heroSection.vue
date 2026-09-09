@@ -23,25 +23,34 @@
             <productGrid
                 v-show="featuredCollection && !isLoading && !productStore.isLoading"
                 :collection-id="featuredCollection?.id"
+                @add-to-cart="showNotificationPopup"
             />
 
         </div>
+
+        <notifications
+            :key="notificationKey"
+            :visible="showNotification"
+            @close="showNotification = false"
+        />
     </section>
 </template>
 
-<script>
-import { computed, onMounted } from 'vue'
+<script lang="ts">
+import { computed, onMounted, ref, nextTick } from 'vue'
 import goToButton from '../buttons/goToButton.vue'
 import { useProductStore } from '../../stores/productStore'
 import productGrid from './productGrid.vue'
 import skeleton from '../tools/skeleton.vue' // Ton composant Skeleton de cartes
+import notifications from '../tools/notifications.vue'
 
 export default {
     name: 'HeroSection',
     components: {
         goToButton,
         productGrid,
-        skeleton
+        skeleton,
+        notifications
     },
 
     setup(){
@@ -88,6 +97,28 @@ export default {
             }
         }
 
+        // ManageNotifications
+
+        const showNotification = ref<boolean>(false);
+        const notificationKey = ref<number>(0);
+        let notificationTimer: ReturnType<typeof setTimeout> | null = null;
+
+        function showNotificationPopup(){
+            if (notificationTimer) {
+                clearTimeout(notificationTimer);
+            }
+
+            notificationKey.value += 1;
+            showNotification.value = false;
+
+            nextTick(() => {
+                showNotification.value = true;
+                notificationTimer = setTimeout(() => {
+                showNotification.value = false;
+                }, 2500);
+            });
+        }
+
         onMounted(async () => {
             if (!productStore.collections.length) {
                 await productStore.fetchCollections()
@@ -98,10 +129,14 @@ export default {
             productStore,
             isLoading,
             featuredCollection,
+            showNotification,
+            notificationKey,
+            notificationTimer,
             title,
             subtitle,
             heroStyle,
-            scrollToGrid
+            scrollToGrid,
+            showNotificationPopup
         }
     },
 }

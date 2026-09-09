@@ -66,6 +66,8 @@ const props = withDefaults(defineProps<Props>(), {
   subtitle: "Profitez de nos offres exceptionnelles avant rupture de stock",
 });
 
+const emits = defineEmits(['addToCart']);
+
 const productStore = useProductStore();
 const cartStore = useCartStore();
 const router = useRouter();
@@ -239,6 +241,7 @@ async function addToCart(id: string | number) {
 
   try {
     await cartStore.addToCart(id, 1);
+    emits ('addToCart')
   } catch (error){
     console.error("Erreur lors de la récupération du panier:", error);
   } finally {

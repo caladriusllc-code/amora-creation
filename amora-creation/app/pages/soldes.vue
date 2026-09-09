@@ -2,26 +2,33 @@
   <div class="page-container">
     <Mainheader theme="black" @toggle-cart="toggleCart"/>
     <div class="dis-section">
-      <discountProductGrid/>
+      <discountProductGrid @addToCart="showNotificationPopup"/>
     </div>
     <footerSection/>
     <cartModale/>
+    <notifications
+      :key="notificationKey"
+      :visible="showNotification"
+      @close="showNotification = false"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import Mainheader from '../components/navigator/header.vue'
 import discountProductGrid from '~/components/layout/discountProductGrid.vue';
 import footerSection from '~/components/layout/footerSection.vue';
 import cartModale from '~/components/modale/cartModale.vue';
+import notifications from '../components/tools/notifications.vue';
 
 export default {
   components: {
     Mainheader,
     discountProductGrid,
     footerSection,
-    cartModale
+    cartModale,
+    notifications
   },
   setup(){
 
@@ -31,9 +38,35 @@ export default {
       isCartOpen.value = !isCartOpen.value;
     }
 
+    // ManageNotifications
+
+    const showNotification = ref<boolean>(false);
+    const notificationKey = ref<number>(0);
+    let notificationTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function showNotificationPopup(){
+      if (notificationTimer) {
+        clearTimeout(notificationTimer);
+      }
+
+      notificationKey.value += 1;
+      showNotification.value = false;
+
+      nextTick(() => {
+        showNotification.value = true;
+        notificationTimer = setTimeout(() => {
+          showNotification.value = false;
+        }, 2500);
+      });
+    }
+
     return{
       isCartOpen,
-      toggleCart
+      showNotification,
+      notificationKey,
+      notificationTimer,
+      toggleCart,
+      showNotificationPopup
     }
   }
 }
