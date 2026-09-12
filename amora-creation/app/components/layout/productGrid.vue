@@ -31,7 +31,7 @@
       />
 
       <moreProductButton 
-        v-if="showDiscoverMore" 
+        v-if="showDiscoverMore && formattedProducts.length >= 7" 
         type="button" 
         aria-label="Découvrir plus de produits"
         @click="goToDiscoverMore"

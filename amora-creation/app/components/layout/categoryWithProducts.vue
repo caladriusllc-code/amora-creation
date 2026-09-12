@@ -61,7 +61,11 @@
           @goToProductDetail="goToProductDetail(product.slug)"
         />
 
-        <Paginator />
+        <Paginator
+          v-if="categoryTotalPages > 1"
+          :current-page="1"
+          :total-count="productStore.categoryWithProducts.products.length"
+        />
       </div>
 
     </div>
@@ -108,6 +112,9 @@ const activeCategory = ref<string | number>((route.params.id as string) || 'robe
 // NOUVEAU : Liste des catégories à envoyer à l'enfant.
 // Note : Si tu as ces catégories dans ton store, tu peux faire `const categories = computed(() => productStore.categories)`
 const categories = computed(() => productStore.categories)
+const categoryTotalPages = computed(() =>
+  Math.ceil((productStore.categoryWithProducts?.products.length || 0) / 10)
+)
 
 // 4. Cycle de vie
 onMounted(async () => {
