@@ -25,6 +25,8 @@
         :isLoading="isLoading"
       />
     </div>
+
+    <inStockTool/>
   </div>
 </template>
 
@@ -33,10 +35,13 @@ import { computed } from 'vue';
 import cartButton from '../buttons/cartButton.vue';
 import { useCartStore } from '../../stores/cartStore';
 
+import inStockTool from '../tools/inStockTool.vue';
+
 export default {
   name: 'productCards',
   components: {
     cartButton,
+    inStockTool
   },
   props: {
     image: String,
