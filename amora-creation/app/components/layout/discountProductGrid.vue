@@ -27,6 +27,7 @@
         :base-price="product.basePrice"
         :discount-price="product.discountPrice"
         :sale="product.sale"
+        :is-in-stock="product.is_in_stock"
         :isLoading="loadingProductIds.has(product.id)"
         @addToCart="addToCart(product.id)"
         @goToProductDetail="goToProductDetail(product.slug)"
@@ -136,7 +137,8 @@ const formattedProducts = computed(() => {
       discountPrice: p.discount_price ? Number(p.discount_price) : null,
       image: imageUrl,
       // On force l'étiquette sale à true puisque cette vue est dédiée aux promotions
-      sale: true
+      sale: true,
+      is_in_stock: p.is_in_stock
     }
   });
 });

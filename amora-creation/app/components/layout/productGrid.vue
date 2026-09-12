@@ -25,6 +25,7 @@
         :base-price="product.basePrice"
         :discount-price="product.discountPrice"
         :sale="product.discount_percentage ? `-${product.discount_percentage}%` : false"
+        :is-in-stock="product.is_in_stock"
         :isLoading="loadingProductIds.has(product.id)"
         @addToCart="addToCart(product.id)"
         @goToProductDetail="goToProductDetail(product.slug)"
@@ -155,7 +156,9 @@ const formattedProducts = computed(() => {
       price: p.discount_price ? Number(p.discount_price) : Number(p.price),
       discountPrice: p.discount_price ? Number(p.discount_price) : null,
       image: imageUrl,
-      sale: p.discount_price !== null && p.discount_price !== undefined
+      sale: p.discount_price !== null && p.discount_price !== undefined,
+      discount_percentage: p.discount_percentage,
+      is_in_stock: p.is_in_stock
     }
   });
 });

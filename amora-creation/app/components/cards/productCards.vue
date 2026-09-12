@@ -21,27 +21,34 @@
         </div>
       </div>
       <cart-button
-        @click="$emit('addToCart')"
+        @click="handleCartClick"
         :isLoading="isLoading"
       />
     </div>
 
-    <inStockTool/>
+    <inStockTool :is-in-stock="isInStock"/>
+    <instockModal
+      :is-open="showStockModal"
+      :product-name="name"
+      @close="showStockModal = false"
+    />
   </div>
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import cartButton from '../buttons/cartButton.vue';
 import { useCartStore } from '../../stores/cartStore';
 
 import inStockTool from '../tools/inStockTool.vue';
+import instockModal from '../modale/instockModal.vue';
 
 export default {
   name: 'productCards',
   components: {
     cartButton,
-    inStockTool
+    inStockTool,
+    instockModal
   },
   props: {
     image: String,
@@ -49,12 +56,17 @@ export default {
     price: [Number, String], 
     basePrice: [Number, String],
     discountPrice: [Number, String],
-    sale: [Boolean, String], // ⚡️ Accepte désormais le booléen classique OU la string "-20%"
+    sale: [Boolean, String],
     isLoading: Boolean,
+    isInStock: {
+      type: Boolean,
+      default: true
+    }
   },
   emits: ['addToCart', 'goToProductDetail'],
-  setup(props) {
+  setup(props, { emit }) {
     const cartStore = useCartStore();
+    const showStockModal = ref(false);
     const displayPrice = computed(() => {
       return props.discountPrice !== null && props.discountPrice !== undefined
         ? props.discountPrice
@@ -78,12 +90,23 @@ export default {
         'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80';
     };
 
+    const handleCartClick = () => {
+      if (!props.isInStock) {
+        showStockModal.value = true;
+        return;
+      }
+
+      emit('addToCart');
+    };
+
     return {
       cartStore,
+      showStockModal,
       hasDiscount,
       displayPrice,
       formatPrice,
       handleImageError,
+      handleCartClick,
     };
   },
 };

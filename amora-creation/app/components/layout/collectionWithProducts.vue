@@ -44,6 +44,7 @@
           :base-price="product.price"
           :discount-price="product.discount_price"
           :sale="!!product.discount_price"
+          :is-in-stock="product.is_in_stock"
           :isLoading="loadingProductIds.has(product.id)"
           @addToCart="addToCart(product.id)"
           @goToProductDetail="goToProductDetail(product.slug)"
