@@ -75,6 +75,21 @@ class Size(models.Model):
     def __str__(self):
         return self.name
 
+class Weight(models.Model):
+
+    """
+    Poids des vêtements (ex: 0.5kg, 1kg, 1.5kg...)
+    """
+    name = models.CharField(max_length=20, verbose_name="Nom du poids")
+    code = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Code unique (ex: 0.5kg, 1kg, 1.5kg)")
+
+    class Meta:
+        verbose_name = "Poids"
+        verbose_name_plural = "Poids"
+        ordering = ['id']
+
+    def __str__(self):
+        return self.name
 
 class Color(models.Model):
     """
@@ -130,7 +145,7 @@ class Product(models.Model):
         verbose_name="Collection"
     )
     
-    # Tailles et couleurs disponibles pour ce produit
+    # Relation: Tailles, poids et couleurs disponibles pour ce produit
     sizes = models.ManyToManyField(
         Size,
         related_name='products',
@@ -143,6 +158,7 @@ class Product(models.Model):
         blank=True,
         verbose_name="Couleurs disponibles"
     )
+    weight = models.ForeignKey(Weight, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Poids")
 
     stock = models.PositiveIntegerField(default=0, verbose_name="Stock total de la tenue")
 

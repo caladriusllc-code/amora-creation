@@ -17,7 +17,6 @@ class OrderViewSet(viewsets.ViewSet):
     """
     Gestion des commandes.
     """
-    # 👇 AJOUTE CETTE LIGNE ICI
 
     @action(detail=False, methods=['post'])
     @transaction.atomic
@@ -55,6 +54,14 @@ class OrderViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # ⚡️ NOUVEAU 1: Vérification ultime des stocks avant de créer quoi que ce soit
+        for item in cart.items.all():
+            if item.quantity > item.product.stock:
+                return Response(
+                    {"error": f"Le produit '{item.product.name}' n'est plus disponible en quantité suffisante (Restant: {item.product.stock})."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         guest_info = GuestInfo.objects.create(
             email=email,
             full_name=full_name,
@@ -70,14 +77,12 @@ class OrderViewSet(viewsets.ViewSet):
         )
 
         if cart.coupon and cart.coupon.is_valid():
-            subtotal = cart.get_total() # Ça retourne normalement un Decimal
+            subtotal = cart.get_total() 
             discount_amount = Decimal('0.00')
             
             if cart.coupon.discount_type == 'percentage':
-                # 👈 CORRECTION : On divise par Decimal('100') pour garder un objet Decimal
                 discount_amount = (cart.coupon.discount_value / Decimal('100')) * subtotal
             elif cart.coupon.discount_type == 'fixed':
-                # 👈 CORRECTION : On s'assure que la valeur fixe est bien un Decimal
                 discount_amount = Decimal(str(cart.coupon.discount_value))
             
             order.discount_amount = discount_amount
@@ -87,12 +92,17 @@ class OrderViewSet(viewsets.ViewSet):
         order.save()
 
         for item in cart.items.all():
+            # Création de la ligne de commande[cite: 3]
             OrderItem.objects.create(
                 order=order,
                 product=item.product,
                 unit_price=item.unit_price,
                 quantity=item.quantity
             )
+            
+            # ⚡️ NOUVEAU 2: Déduction du stock absolu sur le produit
+            item.product.stock -= item.quantity
+            item.product.save()
 
         order.update_total()
         

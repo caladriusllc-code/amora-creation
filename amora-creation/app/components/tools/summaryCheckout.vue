@@ -12,7 +12,6 @@
 
         <div v-else class="summary-items-list">
             <div v-for="item in cartItems" :key="item.id || item.product.id" class="summary-item">
-                
                 <div class="item-image-wrapper">
                     <img :src="getCoverImage(item.product)" :alt="item.product.name" class="item-image" loading="lazy">
                     <span class="item-quantity-badge">{{ item.quantity }}</span>
@@ -20,29 +19,28 @@
                 
                 <div class="item-details">
                     <h5 class="item-name">{{ item.product.name }}</h5>
-                    <!-- ⚡️ Sécurisation avec le chaînage optionnel (?.) -->
                     <p class="item-variants">{{ item.size?.name || 'Taille unique' }}</p>
                     <span v-if="item.color" class="item-color-info">
-                        <span
-                            v-if="item.color.hex_code"
-                            class="color-swatch"
-                            :style="{ backgroundColor: item.color.hex_code }"
-                            aria-hidden="true"
-                        ></span>
+                        <span v-if="item.color.hex_code" class="color-swatch" :style="{ backgroundColor: item.color.hex_code }" aria-hidden="true"></span>
                         Couleur : {{ item.color.name }}
                     </span>
                 </div>
 
                 <div class="item-price">
-                    <!-- ⚡️ Conversion numérique forcée pour éviter les erreurs NaN -->
                     <p>{{ formatPrice((Number(item.product.price) || 0) * item.quantity) }}</p>
                 </div>
-                
             </div>
         </div>
 
         <div class="summary-footer" v-if="cartItems.length > 0">
-            <div class="total-section">
+            <!-- ⚡️ NOUVEAU : Affichage des frais de livraison si supérieurs à 0 -->
+            <div class="total-section shipping-line" v-if="shippingFee > 0">
+                <span class="total-label sub-label">Frais de livraison</span>
+                <span class="total-amount sub-amount">{{ formatPrice(shippingFee) }}</span>
+            </div>
+
+            <!-- Total général recalculé -->
+            <div class="total-section main-total">
                 <span class="total-label">Total à payer</span>
                 <span class="total-amount">{{ formatPrice(cartTotal) }}</span>
             </div>
@@ -55,20 +53,31 @@ import { computed, onMounted } from 'vue'
 import { useCartStore } from '../../stores/cartStore'
 import { useRuntimeConfig } from '#app'
 
+// ⚡️ NOUVEAU : On définit la prop pour recevoir les frais de livraison
+const props = defineProps({
+    shippingFee: {
+        type: Number,
+        default: 0
+    }
+});
+
 const cartStore = useCartStore()
 const config = useRuntimeConfig()
 
-// --- COMPUTED PROPERTIES ---
 const cartItems = computed(() => cartStore.cart?.items || [])
 const isGlobalLoading = computed(() => cartStore.isLoading)
 
+// ⚡️ NOUVEAU : On inclut les frais de livraison (props.shippingFee) dans le total
 const cartTotal = computed(() => {
-    if (cartStore.cart?.total) return cartStore.cart.total
-    // ⚡️ Conversion numérique appliquée ici aussi
-    return cartItems.value.reduce((total, item) => total + ((Number(item.product.price) || 0) * item.quantity), 0)
+    let baseTotal = 0;
+    if (cartStore.cart?.total) {
+        baseTotal = cartStore.cart.total;
+    } else {
+        baseTotal = cartItems.value.reduce((total, item) => total + ((Number(item.product.price) || 0) * item.quantity), 0);
+    }
+    return baseTotal + props.shippingFee;
 })
 
-// --- MÉTHODES ---
 const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA'
 }
@@ -78,14 +87,12 @@ const getCoverImage = (product: any) => {
     if (!imagePath) return 'https://via.placeholder.com/80'
     if (!imagePath.startsWith('http')) {
         const prefix = imagePath.startsWith('/') ? '' : '/'
-        // ⚡️ Utilisation des variables d'environnement (avec fallback localhost)
         const apiBase = config.public.apiBase || 'http://localhost:8000'
         return `${apiBase}${prefix}${imagePath}`
     }
     return imagePath
 }
 
-// S'assurer que le panier est chargé si l'utilisateur arrive directement sur cette page
 onMounted(() => {
     if (cartItems.value.length === 0) {
         cartStore.fetchCart()
@@ -94,136 +101,30 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.checkout-summary {
-    background-color: #fafafa;
-    border: 1px solid #eaeaea;
-    border-radius: 8px;
-    padding: 24px;
-    width: 100%;
-    /* Idéal pour rester collé en haut lors du scroll sur grand écran */
-    position: sticky;
-    top: 24px; 
-}
-
-h3 {
-    margin-top: 0;
-    margin-bottom: 24px;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.loading-state, .empty-state {
-    text-align: center;
-    color: #666;
-    padding: 2rem 0;
-}
-
-/* ======= ARTICLES ======= */
-.summary-items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.summary-item {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.item-image-wrapper {
-    position: relative;
-    width: 64px;
-    height: 80px;
-    flex-shrink: 0;
-    background: #eee;
-    border-radius: 6px;
-    border: 1px solid #eaeaea;
-}
-
-.item-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 6px;
-}
-
-.item-quantity-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #000; /* Couleur Amora */
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: bold;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.item-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.item-name {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.item-variants {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #666;
-}
-
-.item-price {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #333;
-}
-
-/* ======= FOOTER ======= */
-.summary-footer {
-    border-top: 1px solid #eaeaea;
-    padding-top: 20px;
-}
-
-.total-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.total-label {
-    font-size: 1.1rem;
-    color: #333;
-    font-weight: 600;
-}
-
-.total-amount {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #000;
-}
-
+/* Les styles existants restent inchangés... */
+.checkout-summary { background-color: #fafafa; border: 1px solid #eaeaea; border-radius: 8px; padding: 24px; width: 100%; position: sticky; top: 24px; }
+h3 { margin-top: 0; margin-bottom: 24px; font-size: 1.25rem; font-weight: 600; color: #333; }
+.loading-state, .empty-state { text-align: center; color: #666; padding: 2rem 0; }
+.summary-items-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+.summary-item { display: flex; gap: 16px; align-items: center; }
+.item-image-wrapper { position: relative; width: 64px; height: 80px; flex-shrink: 0; background: #eee; border-radius: 6px; border: 1px solid #eaeaea; }
+.item-image { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+.item-quantity-badge { position: absolute; top: -8px; right: -8px; background-color: #000; color: #fff; font-size: 0.75rem; font-weight: bold; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.item-details { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.item-name { margin: 0; font-size: 0.95rem; font-weight: 600; color: #333; }
+.item-variants { margin: 0; font-size: 0.8rem; color: #666; }
+.item-price { font-weight: 600; font-size: 0.95rem; color: #333; }
 .item-color-info { display: inline-flex; align-items: center; gap: 0.3rem; }
-.color-swatch {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
-}
+.color-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.15); flex-shrink: 0; }
 
+.summary-footer { border-top: 1px solid #eaeaea; padding-top: 20px; }
+.total-section { display: flex; justify-content: space-between; align-items: center; }
+
+/* ⚡️ NOUVEAU : Petits ajustements pour différencier le sous-total de livraison du total global */
+.shipping-line { margin-bottom: 12px; }
+.sub-label { font-size: 1rem; color: #666; font-weight: 500; }
+.sub-amount { font-size: 1rem; font-weight: 600; color: #444; }
+.main-total { margin-top: 12px; }
+.total-label { font-size: 1.1rem; color: #333; font-weight: 600; }
+.total-amount { font-size: 1.25rem; font-weight: 700; color: #000; }
 </style>

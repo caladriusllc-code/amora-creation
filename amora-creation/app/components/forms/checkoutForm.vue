@@ -39,6 +39,18 @@
                 @input="clearError('city')"
             />
 
+            <!-- ⚡️ NOUVEAU : Sélection de la zone de livraison -->
+            <div class="full-width">
+                <BaseSelect
+                    v-model="formData.shipping_zone"
+                    label="Zone de livraison"
+                    :options="shippingZones"
+                    placeholder="Sélectionnez votre zone de livraison"
+                    :errorMessage="errors.shipping_zone"
+                    @change="handleShippingChange"
+                />
+            </div>
+
             <div class="full-width">
                 <BaseInput
                     v-model="formData.shipping_address"
@@ -61,7 +73,6 @@
                 />
             </div>
 
-            <!-- ⚡️ Ajout de la Checkbox CGV ici -->
             <div class="full-width">
                 <BaseCheckboxe
                     v-model="formData.accept_cgv"
@@ -81,7 +92,7 @@
 import { ref } from 'vue'
 import BaseInput from '../input/BaseInput.vue'
 import BaseSelect from '../input/BaseSelect.vue'
-import BaseCheckboxe from '../input/BaseCheckboxe.vue' // 👈 Correction de la faute de frappe ici
+import BaseCheckboxe from '../input/BaseCheckboxe.vue'
 import { useCookie } from '#app'
 
 import { useOrderStore } from '../../stores/orderStore'
@@ -90,33 +101,27 @@ import type { GuestInfo } from '../../stores/orderStore'
 
 const orderStore = useOrderStore();
 const cartStore = useCartStore();
-const emit = defineEmits(['success', 'submit-checkout'])
 
-// ── État de la notification ───────────────────────────────────────
-const notify = ref({
-    show: false,
-    type: 'success',
-    title: '',
-    message: ''
-});
+// ⚡️ Ajout de 'shipping-updated' pour émettre le montant des frais au composant parent
+const emit = defineEmits(['success', 'submit-checkout', 'shipping-updated'])
 
+const notify = ref({ show: false, type: 'success', title: '', message: '' });
 const showNotification = (type: 'success' | 'error', title: string, message = '') => {
     notify.value = { show: true, type, title, message };
 };
 
-// ── État du formulaire étendu ─────────────────────────────────────
-// 👈 Ajout de accept_cgv au typage et à l'état initial
-const formData = ref<GuestInfo & { payment_method: string, accept_cgv: boolean }>({
+// ⚡️ Ajout de shipping_zone au formulaire et aux erreurs
+const formData = ref<GuestInfo & { payment_method: string, accept_cgv: boolean, shipping_zone: string }>({
     full_name: '',
     email: '',
     phone_number: '',
     city: '',
     shipping_address: '',
     payment_method: '',
+    shipping_zone: '',
     accept_cgv: false
 })
 
-// 👈 Ajout de accept_cgv aux erreurs
 const errors = ref({
     full_name: '',
     email: '',
@@ -124,6 +129,7 @@ const errors = ref({
     city: '',
     shipping_address: '',
     payment_method: '',
+    shipping_zone: '',
     accept_cgv: ''
 })
 
@@ -131,7 +137,20 @@ const clearError = (field: keyof typeof errors.value) => {
     errors.value[field] = ''
 }
 
-// ── Options de paiement ───────────────────────────────────────────
+// ⚡️ NOUVEAU : Liste des zones de livraison (Mock à remplacer par ton API plus tard)
+const shippingZones = ref([
+    { value: 'abidjan', name: 'Abidjan', fee: 1500, label: 'Abidjan - 1 500 FCFA' },
+    { value: 'interieur', name: 'Intérieur du pays', fee: 3500, label: 'Intérieur du pays - 3 500 FCFA' }
+]);
+
+// ⚡️ NOUVEAU : Fonction qui cherche le montant lié à la zone et l'émet au parent
+const handleShippingChange = () => {
+    clearError('shipping_zone');
+    const selectedZone = shippingZones.value.find(zone => zone.value === formData.value.shipping_zone);
+    const fee = selectedZone ? selectedZone.fee : 0;
+    emit('shipping-updated', fee);
+};
+
 const paymentOptions = ref([
     { value: 'WAVE',         name: 'Wave',          label: 'Wave' },
     { value: 'OMCIV2',       name: 'Orange Money',  label: 'Orange Money' },
@@ -139,57 +158,26 @@ const paymentOptions = ref([
     { value: 'CARD',         name: 'Visa/MasterCard', label: 'Visa/MasterCard'}
 ]);
 
-// ── Validation ────────────────────────────────────────────────────
 const validateForm = () => {
     let isValid = true;
+    Object.keys(errors.value).forEach(key => { errors.value[key as keyof typeof errors.value] = '' });
 
-    Object.keys(errors.value).forEach(key => {
-        errors.value[key as keyof typeof errors.value] = ''
-    });
-
-    if (!(formData.value.full_name || '').trim()) {
-        errors.value.full_name = 'Le nom est requis.';
-        isValid = false;
-    }
-
-    if (!(formData.value.email || '').trim()) {
-        errors.value.email = 'L\'email est requis.';
-        isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
-        errors.value.email = 'Veuillez entrer un email valide.';
-        isValid = false;
-    }
-
-    if (!(formData.value.phone_number || '').trim()) {
-        errors.value.phone_number = 'Le numéro de téléphone est requis.';
-        isValid = false;
-    }
-
-    if (!(formData.value.city || '').trim()) {
-        errors.value.city = 'La ville est requise.';
-        isValid = false;
-    }
-
-    if (!(formData.value.shipping_address || '').trim()) {
-        errors.value.shipping_address = 'L\'adresse complète est requise.';
-        isValid = false;
-    }
-
-    if (!formData.value.payment_method) {
-        errors.value.payment_method = 'Veuillez choisir un moyen de paiement.';
-        isValid = false;
-    }
-
-    // ⚡️ Validation de la case à cocher
-    if (!formData.value.accept_cgv) {
-        errors.value.accept_cgv = 'Vous devez accepter les conditions générales de vente pour continuer.';
-        isValid = false;
-    }
+    if (!(formData.value.full_name || '').trim()) { errors.value.full_name = 'Le nom est requis.'; isValid = false; }
+    if (!(formData.value.email || '').trim()) { errors.value.email = 'L\'email est requis.'; isValid = false; } 
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) { errors.value.email = 'Veuillez entrer un email valide.'; isValid = false; }
+    if (!(formData.value.phone_number || '').trim()) { errors.value.phone_number = 'Le numéro de téléphone est requis.'; isValid = false; }
+    if (!(formData.value.city || '').trim()) { errors.value.city = 'La ville est requise.'; isValid = false; }
+    
+    // ⚡️ Validation de la zone de livraison
+    if (!formData.value.shipping_zone) { errors.value.shipping_zone = 'Veuillez choisir une zone de livraison.'; isValid = false; }
+    
+    if (!(formData.value.shipping_address || '').trim()) { errors.value.shipping_address = 'L\'adresse complète est requise.'; isValid = false; }
+    if (!formData.value.payment_method) { errors.value.payment_method = 'Veuillez choisir un moyen de paiement.'; isValid = false; }
+    if (!formData.value.accept_cgv) { errors.value.accept_cgv = 'Vous devez accepter les conditions générales de vente pour continuer.'; isValid = false; }
 
     return isValid;
 }
 
-// ── Soumission globale ────────────────────────────────────────────
 const submitOrder = async () => {
     if (!validateForm()) {
         showNotification('error', 'Champs manquants', 'Veuillez corriger les erreurs sur le formulaire.');
@@ -200,105 +188,43 @@ const submitOrder = async () => {
     backupEmailCookie.value = formData.value.email;
 
     try {
-        const payloadGuest: GuestInfo = {
+        const payloadGuest: any = {
             full_name: formData.value.full_name,
             email: formData.value.email,
             phone_number: formData.value.phone_number,
             city: formData.value.city,
-            shipping_address: formData.value.shipping_address
+            shipping_address: formData.value.shipping_address,
+            // ⚡️ On envoie la zone au backend
+            shipping_zone: formData.value.shipping_zone 
         };
 
         const order: any = await orderStore.checkout(payloadGuest);
         const orderId = order?.id ?? order?.order_id;
 
-        if (!orderId) {
-            showNotification('error', 'Erreur système', "Impossible de générer l'identifiant de la commande.");
-            return;
-        }
+        if (!orderId) { showNotification('error', 'Erreur système', "Impossible de générer l'identifiant de la commande."); return; }
 
-        const paiementResponse: any = await orderStore.initiatePayment(
-            {
-                order_id: orderId,
-                payment_method: formData.value.payment_method.toUpperCase()
-            },
-            formData.value.email
-        );
-
+        const paiementResponse: any = await orderStore.initiatePayment({ order_id: orderId, payment_method: formData.value.payment_method.toUpperCase() }, formData.value.email);
         const paymentUrl = paiementResponse?.payment_url || paiementResponse?.data?.payment_url || null;
 
-        emit('success', {
-            paymentMethod: formData.value.payment_method,
-            email: formData.value.email,
-            fullName: formData.value.full_name,
-            phone: formData.value.phone_number,
-            paymentUrl,
-        });
-
+        emit('success', { paymentMethod: formData.value.payment_method, email: formData.value.email, fullName: formData.value.full_name, phone: formData.value.phone_number, paymentUrl });
         emit('submit-checkout', formData.value);
 
     } catch (error: any) {
         console.error("Erreur lors de la validation :", error);
-        const errorMsg = error?.response?._data?.message
-            || error?.message
-            || "Une erreur est survenue lors de l'initialisation du paiement.";
+        const errorMsg = error?.response?._data?.message || error?.message || "Une erreur est survenue lors de l'initialisation du paiement.";
         showNotification('error', 'Échec de la commande', errorMsg);
     }
 }
 </script>
 
 <style scoped>
-.checkout-form {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-h3 {
-    margin-bottom: 24px;
-    color: #333;
-    font-size: 1.5rem;
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-@media (max-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.full-width {
-    grid-column: 1 / -1;
-}
-
-.submit-btn {
-    width: 100%;
-    padding: 14px;
-    background-color: #000;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.submit-btn:hover {
-    background-color: #333;
-}
-
-.submit-btn:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
+/* Les styles restent identiques à l'original */
+.checkout-form { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+h3 { margin-bottom: 24px; color: #333; font-size: 1.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+.full-width { grid-column: 1 / -1; }
+.submit-btn { width: 100%; padding: 14px; background-color: #000; color: #fff; border: none; border-radius: 4px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s ease; }
+.submit-btn:hover { background-color: #333; }
+.submit-btn:disabled { background-color: #ccc; cursor: not-allowed; }
 </style>
