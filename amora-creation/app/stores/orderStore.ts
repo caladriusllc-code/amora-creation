@@ -10,6 +10,7 @@ export interface GuestInfo {
     phone_number: string;
     shipping_address: string;
     city?: string;
+    shipping_zone?: number | string;
     created_at?: string;
 }
 

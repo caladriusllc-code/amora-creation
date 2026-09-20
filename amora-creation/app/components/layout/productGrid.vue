@@ -239,7 +239,7 @@ function goToProductDetail(slug: string) {
 }
 
 function goToDiscoverMore() {
-  router.push('/collections');
+  router.push('/collection');
 }
 
 // Lifecycle hooks

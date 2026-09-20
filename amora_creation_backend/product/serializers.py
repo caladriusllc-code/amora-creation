@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Collection, Size, Color, Product, ProductVariant, ProductImage
+from .models import Category, Collection, Size, Color, Product, ProductVariant, ProductImage, Weight
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,6 +20,11 @@ class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color
         fields = ['id', 'name', 'hex_code']
+
+class WeightSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Weight
+        fields = ['id', 'name', 'code']
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:

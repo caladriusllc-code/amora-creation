@@ -105,17 +105,23 @@ class CartItemSerializer(serializers.ModelSerializer):
         return str(obj.get_subtotal())
 
 
+# Dans serializers.py
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     coupon = CouponSerializer(read_only=True)
     total = serializers.SerializerMethodField()
     total_with_discount = serializers.SerializerMethodField()
+    
+    # ⚡️ 1. Le champ doit être déclaré ici
+    total_weight = serializers.SerializerMethodField() 
 
     class Meta:
         model = Cart
         fields = [
             'id', 'session_key', 'coupon', 'items', 
-            'total', 'total_with_discount', 'created_at', 'updated_at'
+            'total', 'total_with_discount', 
+            'total_weight', # ⚡️ 2. Il doit être listé dans les fields
+            'created_at', 'updated_at'
         ]
 
     def get_total(self, obj):
@@ -124,6 +130,9 @@ class CartSerializer(serializers.ModelSerializer):
     def get_total_with_discount(self, obj):
         return str(obj.get_total_with_discount())
 
+    # ⚡️ 3. La méthode pour le récupérer
+    def get_total_weight(self, obj):
+        return str(obj.get_total_weight())
 
 # ==========================================
 # 4. SÉRIALISEUR DES INFOS INVITÉ (CHECKOUT)

@@ -120,11 +120,11 @@ const goHome = () => {
 }
 
 const retryPayment = () => {
-  router.push('/checkout')
+  router.push('/order')
 }
 
 const contactSupport = () => {
-  router.push('/contact')
+  router.push('/')
 }
 </script>
 

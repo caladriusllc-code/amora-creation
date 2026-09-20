@@ -1,8 +1,10 @@
 <template>
     <form @submit.prevent="submitOrder" class="checkout-form">
+
         <h3>Informations de livraison et paiement</h3>
 
         <div class="form-grid">
+
             <BaseInput
                 v-model="formData.full_name"
                 label="Nom complet"
@@ -41,7 +43,10 @@
 
             <!-- ⚡️ NOUVEAU : Sélection de la zone de livraison -->
             <div class="full-width">
+                <p v-if="shippingZonesLoading" class="shipping-status">Chargement des zones de livraison...</p>
+                <p v-else-if="shippingZones.length === 0" class="shipping-status shipping-status-empty">Aucune zone de livraison disponible.</p>
                 <BaseSelect
+                    v-else
                     v-model="formData.shipping_zone"
                     label="Zone de livraison"
                     :options="shippingZones"
@@ -89,15 +94,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import BaseInput from '../input/BaseInput.vue'
 import BaseSelect from '../input/BaseSelect.vue'
 import BaseCheckboxe from '../input/BaseCheckboxe.vue'
-import { useCookie } from '#app'
+import { useCookie, useNuxtApp } from '#app'
 
 import { useOrderStore } from '../../stores/orderStore'
 import { useCartStore } from '../../stores/cartStore'
 import type { GuestInfo } from '../../stores/orderStore'
+
+interface ShippingRate {
+    min_weight: string
+    max_weight: string
+    price: string
+}
+
+interface ShippingZoneResponse {
+    id: number
+    name: string
+    rates: ShippingRate[]
+    shipping_fee: string
+}
 
 const orderStore = useOrderStore();
 const cartStore = useCartStore();
@@ -137,16 +155,42 @@ const clearError = (field: keyof typeof errors.value) => {
     errors.value[field] = ''
 }
 
-// ⚡️ NOUVEAU : Liste des zones de livraison (Mock à remplacer par ton API plus tard)
-const shippingZones = ref([
-    { value: 'abidjan', name: 'Abidjan', fee: 1500, label: 'Abidjan - 1 500 FCFA' },
-    { value: 'interieur', name: 'Intérieur du pays', fee: 3500, label: 'Intérieur du pays - 3 500 FCFA' }
-]);
+const { $api } = useNuxtApp();
+const shippingZonesLoading = ref(false);
+const shippingZones = ref<Array<{ value: number, name: string, label: string, fee: number, rates: ShippingRate[] }>>([]);
+
+const formatPrice = (value: number) => `${value.toLocaleString('fr-FR')} FCFA`;
+
+const fetchShippingZones = async () => {
+    shippingZonesLoading.value = true;
+    try {
+        const response = await $api<{ zones: ShippingZoneResponse[] }>('/order/orders/shipping-zones/');
+        shippingZones.value = (response.zones || []).map(zone => ({
+            value: zone.id,
+            name: zone.name,
+            fee: Number(zone.shipping_fee) || 0,
+            rates: zone.rates || [],
+            label: `${zone.name}${Number(zone.shipping_fee) > 0 ? ` - ${formatPrice(Number(zone.shipping_fee))}` : ''}`
+        }));
+    } catch (error) {
+        console.error('Erreur lors du chargement des zones de livraison:', error);
+        shippingZones.value = [];
+    } finally {
+        shippingZonesLoading.value = false;
+    }
+};
+
+onMounted(async () => {
+    if (!cartStore.cart) {
+        await cartStore.fetchCart();
+    }
+    await fetchShippingZones();
+});
 
 // ⚡️ NOUVEAU : Fonction qui cherche le montant lié à la zone et l'émet au parent
 const handleShippingChange = () => {
     clearError('shipping_zone');
-    const selectedZone = shippingZones.value.find(zone => zone.value === formData.value.shipping_zone);
+    const selectedZone = shippingZones.value.find(zone => zone.value === Number(formData.value.shipping_zone));
     const fee = selectedZone ? selectedZone.fee : 0;
     emit('shipping-updated', fee);
 };
@@ -211,10 +255,40 @@ const submitOrder = async () => {
 
     } catch (error: any) {
         console.error("Erreur lors de la validation :", error);
-        const errorMsg = error?.response?._data?.message || error?.message || "Une erreur est survenue lors de l'initialisation du paiement.";
+        const errorMsg = error?.response?._data?.error || error?.response?._data?.message || error?.message || "Une erreur est survenue lors de l'initialisation du paiement.";
         showNotification('error', 'Échec de la commande', errorMsg);
     }
 }
+
+watch(
+    () => [formData.value.shipping_zone, cartStore.cart?.total_weight], 
+    ([newZoneId, totalWeight]) => {
+        if (!newZoneId) return;
+        clearError('shipping_zone');
+        
+        const selectedZone = shippingZones.value.find(zone => zone.value === Number(newZoneId));
+        if (!selectedZone) return;
+
+        // On part sur le tarif de base par défaut
+        let fee = selectedZone.fee; 
+        const cartWeight = Number(totalWeight) || 0;
+
+        // ⚡️ NOUVEAU : On cherche la bonne tranche de poids dans la grille tarifaire
+        if (selectedZone.rates && selectedZone.rates.length > 0) {
+            const applicableRate = selectedZone.rates.find(rate => {
+                const min = Number(rate.min_weight);
+                const max = Number(rate.max_weight);
+                return cartWeight >= min && cartWeight <= max;
+            });
+
+            if (applicableRate) {
+                fee = Number(applicableRate.price);
+            }
+        }
+        
+        emit('shipping-updated', fee);
+    }
+);
 </script>
 
 <style scoped>

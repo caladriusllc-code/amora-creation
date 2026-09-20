@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from cart.models import GuestInfo
+from cart.models import GuestInfo, ShippingZone, ShippingRate
 
 class GuestInfoSerializer(serializers.ModelSerializer):
 
@@ -29,3 +29,19 @@ class GuestInfoSerializer(serializers.ModelSerializer):
                 "Numéro de téléphone invalide. Formats acceptés : +2250701234567 ou 0701234567."
             )
         return cleaned
+
+# 1. On définit d'abord le sérialiseur enfant (le tarif)
+class ShippingRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShippingRate
+        # Plus besoin de référencer la zone ici puisqu'il sera imbriqué dedans
+        fields = ['id', 'min_weight', 'max_weight', 'price']
+
+# 2. On définit le sérialiseur parent (la zone)
+class ShippingZoneSerializer(serializers.ModelSerializer):
+    # ⚡️ On imbrique la grille tarifaire grâce au related_name='rates'
+    rates = ShippingRateSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ShippingZone
+        fields = ['id', 'name', 'is_active', 'rates']
