@@ -16,31 +16,56 @@
             </div>
         </div>
 
-        <div class="about-section flex items-center justify-center gap-4">
-
-            <div class="about-title">
-                
-                <h2 class="text-xl align-start">description</h2>
-
-                <p class="text-3xl max-w-2xl ">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. 
-                    Nobis, <span>optio? Asperiores quibusdam nostrum qui magnam</span> ut 
-                    facere optio tempora! Voluptas minima at illo unde maiores. 
-                    Dignissimos praesentium quaerat officiis distinctio?
+        <div class="about-section flex flex-col items-center justify-center gap-8 py-16">
+            
+            <div class="about-title w-full max-w-4xl text-center flex flex-col items-center">
+                <h2 class="text-xl">Notre Histoire</h2>
+                <p class="text-3xl mt-4">
+                    Amora Création est une maison dédiée à <span>l'élégance et la beauté féminine</span>. 
+                    Nous concevons des pièces uniques qui subliment chaque silhouette, en alliant 
+                    le raffinement des coupes à la noblesse des matières. Laissez-vous séduire par 
+                    des créations pensées pour la femme moderne, audacieuse et distinguée.
                 </p>
-
             </div>
 
+            <!-- ⚡️ Les cartes avec les features intéressantes pour une boutique de dame -->
+            <div class="flex flex-wrap items-center justify-center gap-6 mt-8">
+                
+                <featuresCards 
+                    title="Qualité Supérieure" 
+                    description="Des tissus soigneusement sélectionnés pour vous offrir un tombé parfait et une durabilité exceptionnelle au quotidien."
+                >
+                    <template #icon>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.536a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                        </svg>
+                    </template>
+                </featuresCards>
 
+                <featuresCards 
+                    title="Sur-Mesure & Confort" 
+                    description="Chaque vêtement est pensé pour épouser vos formes et garantir une aisance absolue, tout en affirmant votre style."
+                >
+                    <template #icon>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75 16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
+                        </svg>
+                    </template>
+                </featuresCards>
+
+                <featuresCards 
+                    title="Design Exclusif" 
+                    description="Affirmez votre personnalité grâce à des designs originaux, des coupes modernes et des détails raffinés qui font la différence."
+                >
+                    <template #icon>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09l2.846.813-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                        </svg>
+                    </template>
+                </featuresCards>
+                
+            </div>
         </div>
-
-        <div class="about-section flex items-center justify-center gap-4">
-            <featuresCards />
-            <featuresCards />
-            <featuresCards />
-        </div>
-
-        
     </section>
 </template>
 
@@ -68,14 +93,13 @@ export default {
         },
         subtitle: {
             type: String,
-            default: 'Qui sommes-nous ?'
+            default: 'Révélez votre élégance'
         }
     },
 
     setup(){
         const productStore = useProductStore()
 
-        // 1. État de chargement des collections pour le Hero
         const isLoading = computed(() => {
             return productStore.collectionsLoading || productStore.collections.length === 0
         })
@@ -85,7 +109,6 @@ export default {
             return productStore.collections.find((collection) => collection.is_featured) || productStore.collections[0]
         })
 
-        // 2. Gestion de l'image de fond uniquement si elle existe
         const backgroundImage = computed(() => {
             if (featuredCollection.value?.image) {
                 return featuredCollection.value.image
@@ -93,7 +116,6 @@ export default {
             return null
         })
 
-        // 3. Style réactif pour l'arrière-plan
         const heroStyle = computed(() => {
             if (backgroundImage.value) {
                 return { backgroundImage: `url(${backgroundImage.value})` }
@@ -141,13 +163,6 @@ export default {
     position: relative;
 }
 
-.collection-section {
-    padding: 5rem 2rem; /* Espace en haut et en bas de la grille */
-    width: 100%;
-    display: flex;
-    justify-content: center; /* Centre la grille et le skeleton */
-}
-
 .overlay {
     display: flex;
     flex-direction: column;
@@ -174,9 +189,8 @@ export default {
 }
 
 /* =========================================
-   💀 SKELETON STYLES (Animations de chargement)
+   💀 SKELETON STYLES
    ========================================= */
-
 @keyframes shimmer {
     0% { background-position: -1000px 0; }
     100% { background-position: 1000px 0; }
@@ -217,26 +231,9 @@ export default {
     border-radius: 25px;
 }
 
-.collection-section {
-    padding: 5rem 2rem;
-    background-color: #fafafa;
-    text-align: center;
-}
-
-.collection-section h2 {
-    font-size: 2.5rem;
-    color: #333;
-    margin-bottom: 3rem;
-}
-
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
+/* =========================================
+   SECTION À PROPOS
+   ========================================= */
 .about-title{
     padding: 1rem;
     display: flex;
@@ -245,31 +242,36 @@ export default {
 }
 
 .about-section{
-    min-height:50vh;
+    min-height: 50vh;
     width: 100%;
-    padding: 2rem;
+    padding: 4rem 2rem;
     background-color: #ebebeb;
 }
 
 .about-section h2{
-    background: #fff;
-    padding: 0.5rem;
+    background: #1f1f1f;
+    color: #fff;
+    padding: 0.5rem 1.5rem;
     width: fit-content;
     border-radius: 1.5rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
 }
 
 .about-section p {
     width: 100%;
-    line-height: 1.5;
-    color: #767676;
+    line-height: 1.6;
+    color: #555555;
     font-weight: 400;
 }
 
 .about-section p span{
     width: 100%;
-    line-height: 1.5;
+    line-height: 1.6;
     color: #1f1f1f;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 @media (max-width: 768px) {

@@ -1,6 +1,12 @@
 <template>
     <div class="checkout-summary">
-        <h3>Résumé de la commande</h3>
+        
+        <div class="header-summary flex flex-col justify-start">
+            <h3>Résumé de la commande</h3>
+            <p>{{ cartItems.length }} article(s) dans le panier</p>
+        </div>
+
+        <hr class="summary-divider" />
 
         <div v-if="isGlobalLoading && cartItems.length === 0" class="loading-state">
             <p>Chargement de votre panier...</p>
@@ -129,38 +135,179 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.checkout-summary { background-color: #fafafa; border: 1px solid #eaeaea; border-radius: 8px; padding: 24px; width: 100%; position: sticky; top: 24px; }
-h3 { margin-top: 0; margin-bottom: 24px; font-size: 1.25rem; font-weight: 600; color: #111827; }
-.loading-state, .empty-state { text-align: center; color: #6b7280; padding: 2rem 0; }
-.summary-items-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-.summary-item { display: flex; gap: 16px; align-items: center; }
+.checkout-summary { 
+    background-color: #fafafa; 
+    border: 1px solid #eaeaea; 
+    border-radius: 8px; 
+    padding: 24px; 
+    width: 100%; 
+    position: sticky; 
+    top: 24px; 
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+h3 { 
+    margin-top: 0; 
+    margin-bottom: 4px; 
+    font-size: 1.25rem; 
+    font-weight: 600; 
+    color: #111827; 
+}
+.loading-state, .empty-state { 
+    text-align: center; 
+    color: #6b7280; 
+    padding: 2rem 0; 
+}
+.summary-items-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 16px; 
+    margin-bottom: 24px; 
+}
+.summary-item { 
+    display: flex; 
+    gap: 16px; 
+    align-items: center; 
+}
 
-.item-image-wrapper { position: relative; width: 64px; height: 80px; flex-shrink: 0; background: #eee; border-radius: 6px; border: 1px solid #eaeaea; }
-.item-image { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-.item-quantity-badge { position: absolute; top: -8px; right: -8px; background-color: #111827; color: #fff; font-size: 0.75rem; font-weight: bold; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.item-image-wrapper { 
+    position: relative; 
+    width: 64px; 
+    height: 80px; 
+    flex-shrink: 0; 
+    background: #eee; 
+    border-radius: 6px; 
+    border: 1px solid #eaeaea; 
+}
 
-.item-details { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.item-name { margin: 0; font-size: 0.95rem; font-weight: 600; color: #1f2937; }
-.item-variants { margin: 0; font-size: 0.8rem; color: #6b7280; }
-.item-color-info { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #6b7280; }
-.color-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.15); flex-shrink: 0; }
+.item-image { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    border-radius: 6px; 
+}
+
+.item-quantity-badge { 
+    position: absolute; 
+    top: -8px; 
+    right: -8px; 
+    background-color: #111827; 
+    color: #fff; 
+    font-size: 0.75rem; 
+    font-weight: bold; 
+    width: 22px; 
+    height: 22px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border-radius: 50%; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+}
+
+.item-details { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; gap: 4px; 
+}
+
+.item-name { 
+    margin: 0; 
+    font-size: 0.95rem; 
+    font-weight: 600; color: #1f2937; 
+}
+
+.item-variants { 
+    margin: 0; 
+    font-size: 0.8rem; 
+    color: #6b7280; 
+}
+
+.item-color-info { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 0.3rem; font-size: 0.8rem; color: #6b7280; 
+}
+
+.color-swatch { 
+    display: inline-block; 
+    width: 10px; 
+    height: 10px; 
+    border-radius: 50%; 
+    border: 1px solid rgba(0, 0, 0, 0.15); 
+    flex-shrink: 0; 
+}
 
 /* ⚡️ NOUVEAU : CSS pour aligner les prix et les sous-totaux par article */
-.item-price-container { text-align: right; display: flex; flex-direction: column; justify-content: center; }
-.unit-price-calc { font-size: 0.8rem; color: #6b7280; margin: 0 0 4px 0; }
-.qty-multiplier { font-size: 0.75rem; color: #9ca3af; }
-.item-subtotal { font-weight: 600; font-size: 1rem; color: #111827; margin: 0; }
+.item-price-container { 
+    text-align: right; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+}
+
+.unit-price-calc { 
+    font-size: 0.8rem; 
+    color: #6b7280; 
+    margin: 0 0 4px 0; 
+}
+
+.qty-multiplier { 
+    font-size: 0.75rem; 
+    color: #9ca3af; 
+}
+
+.item-subtotal { 
+    font-weight: 600; 
+    font-size: 1rem; 
+    color: #111827; 
+    margin: 0; }
 
 /* ⚡️ NOUVEAU : CSS pour le footer et le séparateur */
-.summary-footer { border-top: 1px solid #eaeaea; padding-top: 20px; }
-.total-section { display: flex; justify-content: space-between; align-items: center; }
-.sub-line { margin-bottom: 12px; }
-.sub-label { font-size: 0.95rem; color: #4b5563; font-weight: 500; }
-.sub-amount { font-size: 1rem; font-weight: 600; color: #374151; }
 
-.summary-divider { border: none; border-top: 1px dashed #d1d5db; margin: 16px 0; }
+.summary-footer { 
+    border-top: 1px solid #eaeaea; 
+    padding-top: 20px; 
+}
+
+.total-section { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+.sub-line { 
+    margin-bottom: 12px; 
+}
+
+.sub-label { 
+    font-size: 0.95rem; 
+    color: #4b5563; 
+    font-weight: 500; 
+}
+.sub-amount { 
+    font-size: 1rem; 
+    font-weight: 500; 
+    color: #374151; 
+}
+
+.summary-divider { 
+    border: none; 
+    border-top: 1px dashed #d1d5db; 
+    margin: 16px 0; 
+}
 
 .main-total { margin-top: 8px; }
-.total-label { font-size: 1.15rem; color: #111827; font-weight: 700; }
-.total-amount { font-size: 1.35rem; font-weight: 800; color: #000; }
+
+.total-label { 
+    font-size: 1.15rem; 
+    color: #111827; 
+    font-weight: 500; 
+}
+
+.total-amount { 
+    font-size: 1.35rem; 
+    font-weight: 600; 
+    color: #000; 
+}
 </style>
