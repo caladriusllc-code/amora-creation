@@ -1,5 +1,9 @@
 <template>
   <div class="page-container">
+    <Head>
+      <title>Amora création - Catégories</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
     <Mainheader theme="black"/>
     <main class="main-layout">
       <productsCategory title="Catégories de produits"/>

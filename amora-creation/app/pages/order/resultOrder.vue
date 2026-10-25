@@ -1,5 +1,9 @@
 <template>
   <div class="payment-result-container">
+    <Head>
+      <title>Amora création - Votre commande</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
     <div class="status-card">
       
       <div v-if="isLoading" class="state-view loading-state">
@@ -17,7 +21,7 @@
         </div>
         <h2>Paiement réussi !</h2>
         <p>Merci pour votre achat chez Amora Création. Votre commande <strong v-if="orderId">#{{ orderId }}</strong> est confirmée.</p>
-        <p class="sub-text">Vous recevrez un email de confirmation d'ici quelques minutes.</p>
+        <p class="sub-text">Nous vous contactérons dans les heures qui suivent pour votre livraison</p>
         
         <button @click="goHome" class="submit-btn">Continuer mes achats</button>
       </div>

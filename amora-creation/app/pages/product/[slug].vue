@@ -1,5 +1,9 @@
 <template>
   <div class="main-layout">
+    <Head>
+      <title>Amora - {{ title }}</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
     <Mainheader theme="black" @toggle-cart="toggleCart"/>
     <productDetail @addToCart="toggleCart"/>
     <footerSection/>
@@ -8,7 +12,9 @@
 </template>
 
 <script lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
+
 import productDetail from '../../components/layout/productDetail.vue'
 import Mainheader from '../../components/navigator/header.vue'
 import cartModale from '../../components/modale/cartModale.vue'
@@ -21,6 +27,12 @@ export default {
     footerSection
   },
   setup() {
+    const route = useRoute();
+    const title = computed(()=>{
+      const slug = route.params.slug;
+      return slug;
+    })
+
     const isCartOpen = ref<boolean>(false);
 
     function toggleCart() {
@@ -28,6 +40,8 @@ export default {
     }
 
     return {
+      route,
+      title,
       isCartOpen,
       toggleCart
     }

@@ -1,5 +1,9 @@
 <template>
     <div class="page-container">
+        <Head>
+            <title>Amora création - Votre commande</title>
+            <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+        </Head>
         <div class="checkout-wrapper">
             
             <div class="checkout-left">

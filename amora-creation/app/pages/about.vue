@@ -1,11 +1,15 @@
 <template>
-    <div class="page-container">
-        <Mainheader @toggle-cart="toggleCart"/>
-            <main>
-                <aboutUsSection />
-            </main>
-        <footerSection/>
-    </div>
+  <div class="page-container">
+    <Head>
+      <title>Amora création - A propos</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
+    <Mainheader @toggle-cart="toggleCart"/>
+      <main>
+        <aboutUsSection />
+      </main>
+    <footerSection/>
+  </div>
 </template>
 
 <script lang="ts">

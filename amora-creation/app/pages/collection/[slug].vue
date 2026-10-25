@@ -1,5 +1,9 @@
 <template>
   <div class="page-container">
+    <Head>
+      <title>Amora - Collection {{ title }}</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
     <Mainheader theme="light" @toggle-cart="toggleCart" />
     <collectionWithProducts  @add-to-cart="handleProductAdded"/>
     <FooterSection />
@@ -13,12 +17,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import Mainheader from '../../components/navigator/header.vue'
 import collectionWithProducts from '../../components/layout/collectionWithProducts.vue'
 import FooterSection from '../../components/layout/footerSection.vue'
 import cartModale from '../../components/modale/cartModale.vue'
 import notifications from '../../components/tools/notifications.vue'
+
+const route = useRoute();
+
+
+const title = computed(()=>{
+  const slug = route.params.slug
+  return slug;
+})
 
 const isCartOpen = ref<boolean>(false)
 

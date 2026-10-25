@@ -17,17 +17,6 @@
                     <img :src="img.image" :alt="product.name">
                 </article>
             </div>
-
-            <div v-show="showScrollbar && secondaryImages.length > 0" class="custom-scrollbar-container">
-                <div class="scrollbar-track" ref="trackRef" @click="handleTrackClick">
-                    <div
-                    class="scrollbar-thumb"
-                    :style="{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }"
-                    @mousedown.prevent="startDrag"
-                    @touchstart="startDrag"
-                    ></div>
-                </div>
-            </div>
         </div>
 
         <div class="info-detail-layout">
@@ -46,7 +35,16 @@
             <productSizes :sizes="product.sizes" @size-selected="onSizeSelected" />
             <productColors :colors="product.colors" @color-selected="onColorSelected" />
 
-            <span>En stock</span>
+            <inStockTool 
+                :is-in-stock="product.is_in_stock"
+            />
+
+            <instockModal 
+                :is-open="showStockModal"
+                :product-name="name"
+                @close="showStockModal = false"
+            />
+
         </div>
 
     </div>
@@ -61,7 +59,6 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProductStore } from '../../stores/productStore';
 import { useCartStore } from '../../stores/cartStore'
-import type { Product } from '../../stores/productStore'
 
 import productGrid from '../layout/productGrid.vue';
 import productCategory from '../layout/productsCategory.vue'
@@ -69,6 +66,8 @@ import cartButton from '../buttons/cartButton.vue'
 import productSizes from '../tools/productSizes.vue'
 import productColors from '../tools/productColors.vue'
 import shopButton from '../buttons/shopButton.vue'
+import instockModal from '../modale/instockModal.vue';
+import inStockTool from '../tools/inStockTool.vue';
 
 export default {
     components: {
@@ -77,13 +76,27 @@ export default {
         cartButton,
         productSizes,
         productColors,
-        shopButton
+        shopButton,
+        instockModal,
+        inStockTool
+    },
+    props:{
+        name:String,
+        basePrice: [Number, String],
+        isInStock:{
+            type:Boolean,
+            default: true
+        }
     },
     emits: ['addToCart'],
     setup() {
         const route = useRoute();
         const productStore = useProductStore();
         const cartStore = useCartStore();
+
+        // About inStockModale
+        const showStockModal = ref(false);
+        
 
         const product = computed(() => {
             const slug = route.params.slug;
@@ -113,86 +126,6 @@ export default {
             selectedImage.value = imageUrl;
         };
 
-        // --- Refs pour le scrolling (inchangé) ---
-        const cardsContainer = ref<HTMLElement | null>(null);
-        const trackRef = ref<HTMLElement | null>(null);
-        const thumbWidth = ref(0);
-        const thumbLeft = ref(0);
-        const showScrollbar = ref(false);
-        let isDragging = false;
-        let startX = 0;
-        let startScrollLeft = 0;
-
-        const updateScrollbar = () => {
-            const container = cardsContainer.value;
-            if (!container) return;
-            const { scrollLeft, scrollWidth, clientWidth } = container;
-            if (scrollWidth <= clientWidth) {
-                showScrollbar.value = false;
-                return;
-            }
-            showScrollbar.value = true;
-            const visibleRatio = clientWidth / scrollWidth;
-            const calculatedWidth = Math.max(10, Math.min(100, visibleRatio * 100));
-            thumbWidth.value = calculatedWidth;
-            const maxScrollLeft = scrollWidth - clientWidth;
-            const progress = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
-            thumbLeft.value = progress * (100 - calculatedWidth);
-        };
-
-        const startDrag = (e: MouseEvent | TouchEvent) => {
-            e.preventDefault();
-            const container = cardsContainer.value;
-            if (!container) return;
-            isDragging = true;
-            const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
-            startX = clientX;
-            startScrollLeft = container.scrollLeft;
-            document.addEventListener('mousemove', onDrag);
-            document.addEventListener('mouseup', stopDrag);
-            document.addEventListener('touchmove', onDrag, { passive: false });
-            document.addEventListener('touchend', stopDrag);
-        };
-
-        const onDrag = (e: MouseEvent | TouchEvent) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            const container = cardsContainer.value;
-            const track = trackRef.value;
-            if (!container || !track) return;
-            const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX;
-            const deltaX = clientX - startX;
-            const trackWidth = track.offsetWidth;
-            const maxScrollLeft = container.scrollWidth - container.clientWidth;
-            const ratio = maxScrollLeft / (trackWidth * (1 - thumbWidth.value / 100));
-            container.scrollLeft = startScrollLeft + deltaX * ratio;
-        };
-
-        const stopDrag = () => {
-            if (!isDragging) return;
-            isDragging = false;
-            document.removeEventListener('mousemove', onDrag);
-            document.removeEventListener('mouseup', stopDrag);
-            document.removeEventListener('touchmove', onDrag);
-            document.removeEventListener('touchend', stopDrag);
-        };
-
-        const handleTrackClick = (e: MouseEvent) => {
-            const container = cardsContainer.value;
-            const track = trackRef.value;
-            if (!container || !track) return;
-            const rect = track.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const trackWidth = rect.width;
-            const thumbWidthPx = (thumbWidth.value / 100) * trackWidth;
-            const maxScrollLeft = container.scrollWidth - container.clientWidth;
-            const targetScroll = ((clickX - thumbWidthPx / 2) / (trackWidth - thumbWidthPx)) * maxScrollLeft;
-            container.scrollTo({
-                left: Math.max(0, Math.min(targetScroll, maxScrollLeft)),
-                behavior: 'smooth',
-            });
-        };
-
         // Logique pour ajouter le produit au panier
         const selectedSize = ref<any>(null);
         const selectedColor = ref<any>(null);
@@ -208,6 +141,12 @@ export default {
         };
 
         async function addToCart(){
+
+            if (!product.value.is_in_stock){
+                showStockModal.value = true;
+                return;
+            }
+
             try{
                 if (product.value?.id){
                     // Passer la taille et couleur sélectionnées
@@ -230,16 +169,11 @@ export default {
             if (!productStore.products.length) {
                 await productStore.fetchProducts();
             }
-
-            const container = cardsContainer.value;
-            if (container) {
-                container.addEventListener('scroll', updateScrollbar);
-                setTimeout(() => updateScrollbar(), 100);
-            }
         });
 
         return {
             product,
+            showStockModal,
             currentMainImage,
             secondaryImages,
             setMainImage,
@@ -247,15 +181,6 @@ export default {
             selectedColor,
             onSizeSelected,
             onColorSelected,
-
-            cardsContainer,
-            trackRef,
-            thumbWidth,
-            thumbLeft,
-            showScrollbar,
-            startDrag,
-            handleTrackClick,
-            updateScrollbar,
             addToCart,
             cartStore
         };

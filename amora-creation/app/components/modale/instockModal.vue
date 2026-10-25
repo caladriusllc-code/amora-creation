@@ -1,31 +1,34 @@
 <template>
-  <Transition name="fade">
-    <div v-if="isOpen" class="modal-overlay blurred-overlay" @click.self="$emit('close')">
-      <div class="modal-content">
-        <button class="close-button" @click="$emit('close')" aria-label="Fermer">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+  <!-- ⚡️ Teleport déplace l'overlay au niveau du body de la page -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="isOpen" class="modal-overlay blurred-overlay" @click.self="$emit('close')">
+        <div class="modal-content">
+          <button class="close-button" @click="$emit('close')" aria-label="Fermer">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
-        <div class="icon-wrapper">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="alert-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
-          </svg>
+          <div class="icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="alert-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+            </svg>
+          </div>
+          
+          <h3 class="modal-title">Rupture de stock</h3>
+          
+          <p class="modal-text">
+            Le produit <strong v-if="productName">{{ productName }}</strong> est malheureusement victime de son succès et n'est plus disponible dans cette configuration.
+          </p>
+          
+          <button class="action-btn" @click="$emit('close')">
+            Continuer mes achats
+          </button>
         </div>
-        
-        <h3 class="modal-title">Rupture de stock</h3>
-        
-        <p class="modal-text">
-          Le produit <strong v-if="productName">{{ productName }}</strong> est malheureusement victime de son succès et n'est plus disponible dans cette configuration.
-        </p>
-        
-        <button class="action-btn" @click="$emit('close')">
-          Continuer mes achats
-        </button>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -44,12 +47,11 @@ defineEmits(['close']);
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 9999; /* ⚡️ Ajusté pour passer au-dessus de tout le reste du site */
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  /* L'astuce du flou réside ici : background semi-transparent + backdrop-filter */
   background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -90,9 +92,6 @@ defineEmits(['close']);
   height: 20px;
 }
 
-/* =========================================
-   ICÔNE & TEXTE
-   ========================================= */
 .icon-wrapper {
   display: flex;
   justify-content: center;
@@ -120,9 +119,6 @@ defineEmits(['close']);
   margin-bottom: 2rem;
 }
 
-/* =========================================
-   BOUTON D'ACTION
-   ========================================= */
 .action-btn {
   width: 100%;
   padding: 0.875rem 1.5rem;
@@ -140,9 +136,6 @@ defineEmits(['close']);
   background-color: #374151;
 }
 
-/* =========================================
-   TRANSITIONS (Similaire à cartModale)
-   ========================================= */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -154,7 +147,7 @@ defineEmits(['close']);
 }
 
 .fade-enter-active .modal-content {
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .fade-enter-from .modal-content {

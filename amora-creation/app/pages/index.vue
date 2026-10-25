@@ -1,5 +1,9 @@
 <template>
   <div class="page-container">
+    <Head>
+      <title>Amora création - Accueil</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
     <Mainheader @toggle-cart="toggleCart"/>
     <main>
       <heroSection  />

@@ -1,5 +1,9 @@
 <template>
   <div class="main-layout">
+    <Head>
+      <title>Amora création - Détail de produit</title>
+      <meta name="description" content="Gotics Business & Web Analytics Dashboard" />
+    </Head>
     <Mainheader theme="dark"/>
     <productDetail @addToCart="toggleCart"/>
     <cartModale :isOpen="isCartOpen" @close="toggleCart"/>
