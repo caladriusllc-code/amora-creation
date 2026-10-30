@@ -89,7 +89,7 @@ export default {
         }
     },
     emits: ['addToCart'],
-    setup() {
+    setup(_props, { emit }) {
         const route = useRoute();
         const productStore = useProductStore();
         const cartStore = useCartStore();
@@ -141,6 +141,7 @@ export default {
         };
 
         async function addToCart(){
+            if (!product.value) return;
 
             if (!product.value.is_in_stock){
                 showStockModal.value = true;
@@ -148,16 +149,15 @@ export default {
             }
 
             try{
-                if (product.value?.id){
-                    // Passer la taille et couleur sélectionnées
-                    await cartStore.addToCart(
-                        product.value.id,
-                        1,
-                        selectedSize.value?.id,
-                        selectedColor.value?.id
-                    )
-                }
+                // Passer la taille et couleur sélectionnées
+                await cartStore.addToCart(
+                    product.value.id,
+                    1,
+                    selectedSize.value?.id,
+                    selectedColor.value?.id
+                )
 
+                emit('addToCart');
                 return cartStore.cart;
             } catch(error: any){
                 console.error('Erreur lors de l\'ajout au panier:', error);
